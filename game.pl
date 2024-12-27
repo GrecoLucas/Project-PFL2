@@ -118,28 +118,24 @@ put_piece(Board, X-Y, Piece, NewBoard) :-
 % -----------------------------------------------
 
 % Prompt the user for a coordinate in the range 0..7
-get_number(Min, Max, Prompt, N) :-
+get_number(Min, Max, Prompt, X-Y) :-
     repeat,
-    write(Prompt), write(': '),
-    read(N),
-    integer(N),
-    N >= Min,
-    N =< Max,
-    !.
+    write(Prompt), nl,
+    read(X-Y),
+    X >= Min, X =< Max,
+    Y >= Min, Y =< Max.
 
 % Choose a move
 choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
     length(Board, Size),
     Max is Size - 1,
     repeat,
-    get_number(0, Max, 'Source X', SrcX),
-    get_number(0, Max, 'Source Y', SrcY),
+    get_number(0, Max, 'Source X-Y (e.g. 0-0)', SrcX-SrcY),
     ( its_my_piece(Board, SrcX-SrcY, Player) ->
         true
     ; write('Invalid piece. Please select your own piece.'), nl, fail
     ),
-    get_number(0, Max, 'Destination X', DestX),
-    get_number(0, Max, 'Destination Y', DestY),
+    get_number(0, Max, 'Destination X-Y (e.g. 0-0)', DestX-DestY),
     ( valid_move(Board, SrcX-SrcY, DestX-DestY, Player) ->
         true
     ; write('Invalid move. Please try again.'), nl, fail
