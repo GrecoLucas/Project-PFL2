@@ -1,67 +1,129 @@
+% Onde o jogo começa chamada menu.
+% GameState representa o estado atual do jogo.
+% GameState é composto por (Current_board, Current_player).
+
+% Tabuleiro inicial
+board(1, [
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [empty, empty, b, b, b, b, b, b],
+    [empty, empty, b, b, b, b, b, b]
+]).
+
+% Variáveis do board
+item(b, 'Black').
+item(w, 'White').
+item(empty, 'Empty').
+
+% Variáveis do player
+player(1, player1).
+player(2, player2).
+
+% Variáveis da peça
+piece(player1, w).
+piece(player2, b).
+
+% Trocar de player
+change_player(player1, player2).
+change_player(player2, player1).
+
+% Selecionar o tabuleiro
+get_board(N, Board) :-
+    board(N, Board).
+
+% Display do item no tabuleiro
+display_item(Item) :-
+    item(Item, C),
+    write(C), write(' ').
+
+% Display de uma linha do tabuleiro
+display_row([]) :- nl.
+display_row([Item|RemainingItems]) :-
+    display_item(Item),
+    display_row(RemainingItems).
+
+% Display do tabuleiro
+display_board([]).
+display_board([Row|RemainingRows]) :-
+    display_row(Row),
+    display_board(RemainingRows).
+
+% Display do jogador atual
+display_player(Player) :-
+    player(_, PlayerName),
+    write('Current Player: '), write(PlayerName), nl.
+
+% Obter uma peça no tabuleiro
+get_piece(Board, X, Y, Piece) :-
+    nth0(Y, Board, Line),
+    nth0(X, Line, Piece).
+
+% Verificar se um movimento é válido
+valid_move(Board, X-Y) :- 
+    get_piece(Board, X, Y, empty).
+
+% Escolher uma jogada válida
+choose_move(Board, X-Y) :-
+    length(Board, N),
+    Max is N - 1,
+    repeat,
+    get_number(0, Max, 'Coordinate X', X), 
+    get_number(0, Max, 'Coordinate Y', Y),
+    valid_move(Board, X-Y), 
+    !.
+
+% Colocar uma peça no tabuleiro
+put_piece(Board, X-Y, Piece, NewBoard) :-
+    nth0(Y, Board, Line, RestLines),
+    nth0(X, Line, _, RestItems),
+    nth0(X, NewLine, Piece, RestItems),
+    nth0(Y, NewBoard, NewLine, RestLines).
+
+% Get a number from the user within a range
+get_number(Min, Max, Prompt, Number) :-
+    repeat,
+    write(Prompt), write(': '),
+    read(Number),
+    integer(Number),
+    Number >= Min,
+    Number =< Max,
+    !.
+
+% Menu inicial
+play :-
+    get_board(1, Board),
+    game_loop((Board, player1)).
+
+% Loop do jogo
+game_loop((Current_board, Current_player)) :-
+    display_board(Current_board),
+    display_player(Current_player),
+    choose_move(Current_board, X-Y),
+    piece(Current_player, Piece),
+    put_piece(Current_board, X-Y, Piece, New_board),
+    change_player(Current_player, New_player),
+    game_loop((New_board, New_player)).
+
+
+
 menu :-
-    write('========================='), nl,
-    write('      STORM CLOUDS       '), nl,
-    write('========================='), nl,
-    write('1. Start Game'), nl,
+    write('Welcome to Storm Clouds!'), nl,
+    write('1. Play'), nl,
     write('2. Rules'), nl,
     write('3. Exit'), nl,
-    write('========================='), nl,
-    write('Choose an option: '),
-    read(Option),
-    execute_option(Option).
+    read(Choice),
+    menu_choice(Choice).
 
-game_B :-
-    write('Black\'s turn'), nl,
-    display_board,
-    write('Choose an option: '), nl,
-    write('1. Move'), nl,
-    write('2. Capture Piece'), nl,
-    write('3. Pass the turn'), nl,
-    read(Option),
-    execute_option_B(Option),
-    game_W.
+menu_choice(1) :- play.
+menu_choice(2) :- rules, menu.
+menu_choice(3) :- write('Goodbye!'), nl.
 
-game_W :-
-    write('White\'s turn'), nl,
-    display_board,
-    write('Choose an option: '), nl,
-    write('1. Move'), nl,
-    write('2. Capture Piece'), nl,
-    write('3. Pass the turn'), nl,
-    read(Option),
-    execute_option_W(Option),
-    game_B.
 
-execute_option_W(1) :-
-    write('Move'), nl.
-execute_option_W(2) :-
-    write('Capture Piece'), nl.
-execute_option_W(3) :-
-    write('Pass the turn'), nl.
-
-execute_option_B(1) :-
-    write('Move'), nl.
-execute_option_B(2) :-
-    write('Capture Piece'), nl.
-execute_option_B(3) :-
-    write('Pass the turn'), nl.
-
-execute_option(1) :-
-    start_game.
-execute_option(2) :-
-    show_rules, nl, menu.
-execute_option(3) :-
-    write('Thanks for playing Storm Clouds!'), nl.
-execute_option(_) :-
-    write('Invalid option, please try again.'), nl, menu.
-
-start_game :-
-    write('Starting the game...'), nl,
-    display_board,
-    write('Good luck!'), nl,
-    game_B.
-
-show_rules :-
+rules :-
     write('Storm Clouds Rules:'), nl,
     write('- The game is played on an 8x8 board.'), nl,
     write('- Each player begins with 12 pieces.'), nl,
@@ -72,51 +134,3 @@ show_rules :-
     write('- The objective is to eliminate all opponent\'s pieces.'), nl,
     write('- If a player cannot move any piece, they must pass the turn.'), nl.
 
-:- dynamic board/1.
-
-% Initial board state
-board([
-    [w, w, '.', '.', '.', '.', '.', '.'],
-    [w, w, '.', '.', '.', '.', '.', '.'],
-    [w, w, '.', '.', '.', '.', '.', '.'],
-    [w, w, '.', '.', '.', '.', '.', '.'],
-    [w, w, '.', '.', '.', '.', '.', '.'],
-    [w, w, '.', '.', '.', '.', '.', '.'],
-    ['.', '.', b, b, b, b, b, b],
-    ['.', '.', b, b, b, b, b, b]
-]).
-
-% Display the board
-display_board :-
-    board(Board),
-    display_board_aux(Board).
-
-display_board_aux([]).
-display_board_aux([Row | Rest]) :-
-    display_row(Row),
-    display_board_aux(Rest).
-
-display_row([]) :-
-    nl.
-display_row([Piece | Rest]) :-
-    write(Piece), write(' '),
-    display_row(Rest).
-
-% Update a specific cell on the board
-% update_board(X, Y, NewPiece).
-update_board(X, Y, NewPiece) :-
-    board(Board),
-    nth0(X, Board, Row, RestRows),
-    nth0(Y, Row, _OldPiece, RestPieces),
-    nth0(Y, NewRow, NewPiece, RestPieces),
-    nth0(X, NewBoard, NewRow, RestRows),
-    retract(board(Board)),
-    asserta(board(NewBoard)).
-
-% Test board update
-test :-
-    write('Initial board:'), nl,
-    display_board,
-    update_board(0, 0, '.'), % Replace the piece at position (0, 0) with '.'
-    write('Board after update:'), nl,
-    display_board.
