@@ -48,26 +48,65 @@ get_piece(Board, X, Y, Piece) :-
     nthX(Board, Y, Row),
     nthX(Row, X, Piece).
 
-valid_move(Board, X-Y) :-
-    get_piece(Board, X, Y, empty).
+% Check if the piece belongs to the current player
+its_my_piece(Board, X-Y, Player) :-
+    get_piece(Board, X, Y, Piece),
+    piece(Player, Piece).
+
+% Valid moves for White (player1)
+valid_move(Board, X-Y, Nx-Ny, player1) :-
+    get_piece(Board, X, Y, w),
+    (
+      % Non-capturing
+      (Nx is X,     Ny is Y - 1)    % up
+    ; (Nx is X - 1, Ny is Y - 1)    % diagonal-up-left
+    ; (Nx is X + 1, Ny is Y)        % right
+    ; (Nx is X + 1, Ny is Y - 1)    % diagonal-up-right
+
+      % Capturing
+    ; (Nx > X, Ny is Y + (Nx - X))  % down
+    ; (Nx < X, Ny is Y + (X - Nx))  % diagonal-down-left
+    ; (Nx < X, Ny is Y)             % left
+    ; (Nx < X, Ny is Y + (X - Nx))  % diagonal-down-left
+    ),
+    get_piece(Board, Nx, Ny, empty) ; get_piece(Board, Nx, Ny, b).
+
+% For Black (player2)
+valid_move(Board, X-Y, Nx-Ny, player2) :-
+    get_piece(Board, X, Y, b),
+    (
+      % Non-capturing
+      (Nx is X,     Ny is Y - 1)    % up
+    ; (Nx is X + 1, Ny is Y - 1)    % diagonal-up-right
+    ; (Nx is X + 1, Ny is Y)        % right
+    ; (Nx is X + 1, Ny is Y + 1)    % diagonal-down-right
+
+      % Capturing
+    ; (Nx > X, Ny is Y + (Nx - X))  % down
+    ; (Nx < X, Ny is Y + (X - Nx))  % diagonal-up-left
+    ; (Nx < X, Ny is Y)             % left
+    ; (Nx < X, Ny is Y + (X - Nx))  % diagonal-down-left
+    ),
+    get_piece(Board, Nx, Ny, empty) ; get_piece(Board, Nx, Ny, w).
+
+its_my_piece(Board, X-Y, Piece, Player) :-
+    write('Checking if '), write(Piece), write(' belongs to '), write(Player), nl,
+    get_piece(Board, X, Y, Piece),
+    piece(Player, Piece).
+
 
 % -----------------------------------------------
 % 6. Put Piece - Updating the Board
 % -----------------------------------------------
 
-% Retrieve the element at position Index (0-based) from a list,
-% returning that element in Elem and the remaining list in Rest.
 
 % Base case
 nth0(0, [Elem|Rest], Elem, Rest).
-
-% Recursive case
 nth0(Index, [Head|Tail], Elem, [Head|NewTail]) :-
     Index > 0,
     Next is Index - 1,
     nth0(Next, Tail, Elem, NewTail).
 
-% Example usage of nth0/4 in put_piece/4:
 put_piece(Board, X-Y, Piece, NewBoard) :-
     nth0(Y, Board, OldRow, RestRows),
     nth0(X, OldRow, _, OldRowRest),
@@ -88,20 +127,29 @@ get_number(Min, Max, Prompt, N) :-
     N =< Max,
     !.
 
-choose_move(Board, SrcX-SrcY, DestX-DestY) :-
+% Choose a move
+choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
     length(Board, Size),
     Max is Size - 1,
+    repeat,
     get_number(0, Max, 'Source X', SrcX),
     get_number(0, Max, 'Source Y', SrcY),
+    ( its_my_piece(Board, SrcX-SrcY, Player) ->
+        true
+    ; write('Invalid piece. Please select your own piece.'), nl, fail
+    ),
     get_number(0, Max, 'Destination X', DestX),
     get_number(0, Max, 'Destination Y', DestY),
-    valid_move(Board, DestX-DestY),
+    ( valid_move(Board, SrcX-SrcY, DestX-DestY, Player) ->
+        true
+    ; write('Invalid move. Please try again.'), nl, fail
+    ),
     !.
 
 game_loop((Board, CurrentPlayer)) :-
     display_board(Board),
     display_player(CurrentPlayer),
-    choose_move(Board, SrcX-SrcY, DestX-DestY),
+    choose_move(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer),
     piece(CurrentPlayer, Piece),
     put_piece(Board, SrcX-SrcY, empty, TempBoard),
     put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
