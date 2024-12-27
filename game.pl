@@ -146,6 +146,16 @@ choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
     ),
     !.
 
+
+game_over(Board) :-
+    \+ (member(Row, Board), member(w, Row)), % Sem peças brancas
+    write('Black wins!'), nl, !.
+game_over(Board) :-
+    \+ (member(Row, Board), member(b, Row)), % Sem peças pretas
+    write('White wins!'), nl, !.
+
+game_loop((Board, CurrentPlayer)) :-
+    game_over(Board), !.
 game_loop((Board, CurrentPlayer)) :-
     display_board(Board),
     display_player(CurrentPlayer),

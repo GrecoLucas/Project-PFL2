@@ -10,6 +10,18 @@ board(1, [
 ]).
 
 
+board(2, [
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [b, empty, empty, empty, empty, empty, empty, empty],
+    [empty, empty, empty, empty, empty, empty, empty, empty],
+    [empty, empty, empty, empty, empty, empty, empty, empty],
+    [empty, empty, empty, empty, empty, empty, empty, empty],
+    [empty, empty, empty, empty, empty, empty, empty, empty],
+    [empty, empty, empty, empty, empty, empty, empty, empty],
+    [empty, empty, empty, empty, empty, empty, empty, empty]
+]).
+
+
 symbol(w, 'W').
 symbol(b, 'B').
 symbol(empty, '.').
