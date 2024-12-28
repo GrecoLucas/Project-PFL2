@@ -1,6 +1,7 @@
 % -----------------------------------------------
-% Weak Bot
-% -----------------------------------------------
+%
+
+
 
 % -----------------------------------------------
 % Board
@@ -37,10 +38,6 @@ board(2, [
 symbol(w, 'W').
 symbol(b, 'B').
 symbol(empty, '.').
-
-% -----------------------------------------------
-% Bots
-% -----------------------------------------------
 
 
 % -----------------------------------------------
@@ -144,7 +141,6 @@ display_player(player2) :-
 % Weak Bot Moves
 % -----------------------------------------------
 % Encontra todos os movimentos válidos para o jogador atual
-:- use_module(library(random)).
 
 range(Min, Max, Min) :- Min =< Max.
 range(Min, Max, Value) :-
@@ -335,21 +331,33 @@ game_loop_against_bot((Board, CurrentPlayer), Difficulty) :-
     
 
 % -----------------------------------------------
-% BotvBot Game loop
+% Bot vs Bot Game Loop
 % -----------------------------------------------
-
-% nao funciona ainda
-%game_loop_bot_against_bot((Board, player1), Difficulty1, Difficulty2) :-
-%    game_over(Board), !.
-%game_loop_bot_against_bot((Board, player1), Difficulty1, Difficulty2) :-
-%    display_board(Board),
-%    display_player(player1),
-%    choose_move(Board, SrcX-SrcY, DestX-DestY, player1),
-%    piece(player1, Piece),
-%    put_piece(Board, SrcX-SrcY, empty, TempBoard),
-%    put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
-%    game_loop_bot_against_bot((NewBoard, player2), Difficulty1, Difficulty2).
-
+game_loop_bot_against_bot((Board, CurrentPlayer), Difficulty1, Difficulty2) :-
+    game_over(Board), !.
+game_loop_bot_against_bot((Board, CurrentPlayer), Difficulty1, Difficulty2) :-
+    display_board(Board),
+    display_player(CurrentPlayer),
+        % Determine the bot's difficulty based on the current player
+        (CurrentPlayer = player1 ->
+            Difficulty = Difficulty1
+        ;
+            CurrentPlayer = player2 ->
+            Difficulty = Difficulty2
+        ),
+        % Bot chooses a move
+        ( choose_move_with_bot(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer, Difficulty) ->
+            piece(CurrentPlayer, Piece),
+            put_piece(Board, SrcX-SrcY, empty, TempBoard),
+            put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
+            change_player(CurrentPlayer, NextPlayer),
+            game_loop_bot_against_bot((NewBoard, NextPlayer), Difficulty1, Difficulty2)
+        ;
+            % No valid move for current bot
+            write('Bot '), write(CurrentPlayer), write(' has no valid moves!'), nl,
+            change_player(CurrentPlayer, NextPlayer),
+            game_loop_bot_against_bot((Board, NextPlayer), Difficulty1, Difficulty2)
+    ).
 
 % -----------------------------------------------
 % Choose Game Mode
