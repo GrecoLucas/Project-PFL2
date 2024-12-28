@@ -1,10 +1,24 @@
 % -----------------------------------------------
-% Weak Bot
+% Imports
 % -----------------------------------------------
+
+:- use_module(library(lists)).
+:- use_module(library(random)).
+
+
+% -----------------------------------------------
+% Dynamic Predicates
+% -----------------------------------------------
+
+% board/2 is dynamic because the board can change during the game (Bots, Players, etc.)
+:- dynamic board/2.
+
 
 % -----------------------------------------------
 % Board
 % -----------------------------------------------
+
+% Actual board, where the game is played
 board(1, [
     [w, w, empty, empty, empty, empty, empty, empty],
     [w, w, empty, empty, empty, empty, empty, empty],
@@ -16,18 +30,17 @@ board(1, [
     [empty, empty, b, b, b, b, b, b]
 ]).
 
-% Test board
-board(2, [
-    [empty, empty, empty, empty, empty, empty, empty, w],
-    [empty, empty, empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty, empty, empty],
-    [b, empty, empty, empty, empty, empty, empty, empty]
+% Initial board (Immutable board, template to reset the board)
+initial_board([
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [empty, empty, b, b, b, b, b, b],
+    [empty, empty, b, b, b, b, b, b]
 ]).
-
 
 
 % -----------------------------------------------
@@ -37,10 +50,6 @@ board(2, [
 symbol(w, 'W').
 symbol(b, 'B').
 symbol(empty, '.').
-
-% -----------------------------------------------
-% Bots
-% -----------------------------------------------
 
 
 % -----------------------------------------------
@@ -143,8 +152,12 @@ display_player(player2) :-
 % -----------------------------------------------
 % Weak Bot Moves
 % -----------------------------------------------
-% Encontra todos os movimentos válidos para o jogador atual
-:- use_module(library(random)).
+
+random_list_move_member(List, Element) :-
+    length(List, Length),
+    Length > 0,
+    random(0, Length, Index),
+    nth0(Index, List, Element).
 
 range(Min, Max, Min) :- Min =< Max.
 range(Min, Max, Value) :-
@@ -152,31 +165,29 @@ range(Min, Max, Value) :-
     Next is Min + 1,
     range(Next, Max, Value).
 
-choose_move_with_bot(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer, _) :-
-    find_piece_and_move(Board, CurrentPlayer, SrcX-SrcY, DestX-DestY).
+% Escolhe uma peça aleatória e realiza um movimento aleatório entre os possíveis
+choose_move_with_bot(Board, SrcX-SrcY, DestX-DestY, Player, _) :-
+    valid_moves_list(Board, Player, MovePairs),
+    MovePairs \= [],  % Assegura que há movimentos disponíveis
+    % Extrai todas as posições de origem únicas
+    findall(SrcX-SrcY, member(SrcX-SrcY-_-_, MovePairs), SrcListDup),
+    sort(SrcListDup, SrcList),  % Remove duplicatas
+    % Seleciona uma posição de origem aleatória
+    random_member(SrcX-SrcY, SrcList),
+    % Encontra todos os movimentos possíveis para a posição de origem selecionada
+    findall(DestX-DestY, member(SrcX-SrcY-DestX-DestY, MovePairs), DestList),
+    % Seleciona uma posição de destino aleatória
+    random_member(DestX-DestY, DestList),
+    % Realiza o movimento no tabuleiro
+    piece(Player, Piece),
+    put_piece(Board, SrcX-SrcY, empty, TempBoard),
+    put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
+    % Atualiza o tabuleiro após o movimento
+    retractall(board(_, _)),
+    assert(board(1, NewBoard)),  % Supondo que o tabuleiro atual seja referenciado por board(1, ...)
+    % Exibe o movimento realizado pelo bot
+    format('Bot move: (~w, ~w) -> (~w, ~w)~n', [SrcX, SrcY, DestX, DestY]).
 
-% Encontra a primeira peça do jogador que pode ser movida e realiza o movimento
-find_piece_and_move(Board, Player, SrcX-SrcY, DestX-DestY) :-
-    range(0, 7, SrcX),
-    range(0, 7, SrcY),
-    get_piece(Board, SrcX, SrcY, Piece),
-    piece(Player, Piece), % Verifica se a peça pertence ao jogador
-    try_move_in_directions(Board, SrcX-SrcY, DestX-DestY, Player).
-
-% Tenta mover para qualquer uma das 8 direções
-try_move_in_directions(Board, SrcX-SrcY, DestX-DestY, Player) :-
-    member(Direction, [
-        -1-0, 1-0, 0-1, 0-(-1), % Verticais e horizontais
-        -1-1, -1-(-1), 1-1, 1-(-1) % Diagonais
-    ]),
-    Direction = DX-DY,
-    DestX is SrcX + DX,
-    DestY is SrcY + DY,
-    valid_move(Board, SrcX-SrcY, DestX-DestY, Player), % Verifica se o movimento é válido
-    !.
-
-% Caso nenhuma direção seja válida para uma peça, falha e passa para a próxima
-try_move_in_directions(_, _, _, _) :- fail.
 
 % -----------------------------------------------
 % Get Piece - Reading the Board
@@ -226,17 +237,47 @@ valid_piece(Board, X-Y, Player) :-
 % -----------------------------------------------
 
 % Base case
-nth0(0, [Elem|Rest], Elem, Rest).
-nth0(Index, [Head|Tail], Elem, [Head|NewTail]) :-
+my_nth0(0, [Elem|Rest], Elem, Rest).
+my_nth0(Index, [Head|Tail], Elem, [Head|NewTail]) :-
     Index > 0,
     Next is Index - 1,
-    nth0(Next, Tail, Elem, NewTail).
+    my_nth0(Next, Tail, Elem, NewTail).
 
 put_piece(Board, X-Y, Piece, NewBoard) :-
-    nth0(Y, Board, OldRow, RestRows),
-    nth0(X, OldRow, _, OldRowRest),
-    nth0(X, NewRow, Piece, OldRowRest),
-    nth0(Y, NewBoard, NewRow, RestRows).
+    my_nth0(Y, Board, OldRow, RestRows),
+    my_nth0(X, OldRow, _, OldRowRest),
+    my_nth0(X, NewRow, Piece, OldRowRest),
+    my_nth0(Y, NewBoard, NewRow, RestRows).
+
+% -----------------------------------------------
+% All Valid Moves List
+% -----------------------------------------------
+
+% Tenta mover para qualquer posição válida no tabuleiro
+try_move_in_directions(Board, SrcX-SrcY, DestX-DestY, Player) :-
+    % Itera sobre todas as possíveis coordenadas de destino
+    range(0, 7, DestX),
+    range(0, 7, DestY),
+    % Evita que a posição de destino seja a mesma que a origem
+    (DestX \= SrcX ; DestY \= SrcY),
+    % Verifica se o movimento é válido de Src para Dest
+    valid_move(Board, SrcX-SrcY, DestX-DestY, Player).
+
+
+% Cria uma lista de pares com coordenadas de origem e destino de todos os movimentos válidos
+valid_moves_list(Board, Player, MovePairs) :-
+    findall(SrcX-SrcY-DestX-DestY,
+        (
+            range(0, 7, SrcX),
+            range(0, 7, SrcY),
+            get_piece(Board, SrcX, SrcY, Piece),
+            piece(Player, Piece),
+            try_move_in_directions(Board, SrcX-SrcY, DestX-DestY, Player)
+        ),
+        AllMoves
+    ),
+    sort(AllMoves, MovePairs).
+
 
 % -----------------------------------------------
 % Valid Moves
@@ -260,6 +301,12 @@ get_number(Min, Max, Prompt, X-Y) :-
 
 % Choose a piece
 choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
+    % Mostrar todas as jogadas possíveis
+    write('Calculating all valid moves...'), nl,
+    valid_moves_list(Board, Player, Moves),
+    write('Valid Moves: '), nl,
+    print_valid_moves(Moves),
+
     length(Board, Size),
     Max is Size - 1,
     repeat,
@@ -285,6 +332,13 @@ confirm(SrcX-SrcY, DestX-DestY) :-
     ; Choice = 0 -> fail
     ).
 
+
+print_valid_moves([]).
+print_valid_moves([SrcX-SrcY-DestX-DestY]) :-
+    format('From (~w, ~w) to (~w, ~w)~n', [SrcX, SrcY, DestX, DestY]).
+print_valid_moves([SrcX-SrcY-DestX-DestY, SrcX2-SrcY2-DestX2-DestY2 | Rest]) :-
+    format('From (~w, ~w) to (~w, ~w)    From (~w, ~w) to (~w, ~w)~n', [SrcX, SrcY, DestX, DestY, SrcX2, SrcY2, DestX2, DestY2]),
+    print_valid_moves(Rest).
 % -----------------------------------------------
 % Game Over
 % -----------------------------------------------
@@ -357,21 +411,33 @@ game_loop_against_bot((Board, CurrentPlayer), Difficulty) :-
     
 
 % -----------------------------------------------
-% BotvBot Game loop
+% Bot vs Bot Game Loop
 % -----------------------------------------------
-
-% nao funciona ainda
-%game_loop_bot_against_bot((Board, player1), Difficulty1, Difficulty2) :-
-%    game_over(Board), !.
-%game_loop_bot_against_bot((Board, player1), Difficulty1, Difficulty2) :-
-%    display_board(Board),
-%    display_player(player1),
-%    choose_move(Board, SrcX-SrcY, DestX-DestY, player1),
-%    piece(player1, Piece),
-%    put_piece(Board, SrcX-SrcY, empty, TempBoard),
-%    put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
-%    game_loop_bot_against_bot((NewBoard, player2), Difficulty1, Difficulty2).
-
+game_loop_bot_against_bot((Board, CurrentPlayer), Difficulty1, Difficulty2) :-
+    game_over(Board), !.
+game_loop_bot_against_bot((Board, CurrentPlayer), Difficulty1, Difficulty2) :-
+    display_board(Board),
+    display_player(CurrentPlayer),
+        % Determine the bot's difficulty based on the current player
+        (CurrentPlayer = player1 ->
+            Difficulty = Difficulty1
+        ;
+            CurrentPlayer = player2 ->
+            Difficulty = Difficulty2
+        ),
+        % Bot chooses a move
+        ( choose_move_with_bot(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer, Difficulty) ->
+            piece(CurrentPlayer, Piece),
+            put_piece(Board, SrcX-SrcY, empty, TempBoard),
+            put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
+            change_player(CurrentPlayer, NextPlayer),
+            game_loop_bot_against_bot((NewBoard, NextPlayer), Difficulty1, Difficulty2)
+        ;
+            % No valid move for current bot
+            write('Bot '), write(CurrentPlayer), write(' has no valid moves!'), nl,
+            change_player(CurrentPlayer, NextPlayer),
+            game_loop_bot_against_bot((Board, NextPlayer), Difficulty1, Difficulty2)
+    ).
 
 % -----------------------------------------------
 % Choose Game Mode
@@ -388,7 +454,7 @@ choose_game_mode :-
 % -----------------------------------------------
 % Plays
 % -----------------------------------------------
-play :-
+play_player_vs_player :-
     board(1, Board),
     game_loop((Board, player1)).
 
@@ -419,6 +485,17 @@ play_bot_vs_bot :-
 % -----------------------------------------------
 % Rules and Menu
 % -----------------------------------------------
+
+% Reset the board to the initial state
+reset_board :-
+    retractall(board(_, _)),
+    initial_board(InitialBoard),
+    assertz(board(1, InitialBoard)).
+
+% Start the game
+play :-
+    reset_board,
+    menu.
 
 menu :-
     write('Welcome to Storm Clouds!'), nl,
@@ -453,7 +530,7 @@ menu_choice(_) :-
     write('Invalid choice!'), nl,
     menu.
 
-game_mode(1) :- play.
+game_mode(1) :- play_player_vs_player.
 game_mode(2) :- play_agaist_bot.
 game_mode(3) :- play_bot_vs_bot.
 game_mode(_) :- write('Invalid choice!'), nl, choose_game_mode.
