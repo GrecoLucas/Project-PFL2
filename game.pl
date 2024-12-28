@@ -1,4 +1,11 @@
 % -----------------------------------------------
+% Imports
+% -----------------------------------------------
+
+:- use_module(library(lists)).
+:- use_module(library(random)).
+
+% -----------------------------------------------
 % Board
 % -----------------------------------------------
 board(1, [
@@ -154,21 +161,6 @@ find_piece_and_move(Board, Player, SrcX-SrcY, DestX-DestY) :-
     piece(Player, Piece), % Verifica se a peça pertence ao jogador
     try_move_in_directions(Board, SrcX-SrcY, DestX-DestY, Player).
 
-% Tenta mover para qualquer uma das 8 direções
-try_move_in_directions(Board, SrcX-SrcY, DestX-DestY, Player) :-
-    member(Direction, [
-        -1-0, 1-0, 0-1, 0-(-1), % Verticais e horizontais
-        -1-1, -1-(-1), 1-1, 1-(-1) % Diagonais
-    ]),
-    Direction = DX-DY,
-    DestX is SrcX + DX,
-    DestY is SrcY + DY,
-    valid_move(Board, SrcX-SrcY, DestX-DestY, Player), % Verifica se o movimento é válido
-    !.
-
-% Caso nenhuma direção seja válida para uma peça, falha e passa para a próxima
-try_move_in_directions(_, _, _, _) :- fail.
-
 % -----------------------------------------------
 % Get Piece - Reading the Board
 % -----------------------------------------------
@@ -195,17 +187,47 @@ its_my_piece(Board, X-Y, Player) :-
 % -----------------------------------------------
 
 % Base case
-nth0(0, [Elem|Rest], Elem, Rest).
-nth0(Index, [Head|Tail], Elem, [Head|NewTail]) :-
+my_nth0(0, [Elem|Rest], Elem, Rest).
+my_nth0(Index, [Head|Tail], Elem, [Head|NewTail]) :-
     Index > 0,
     Next is Index - 1,
-    nth0(Next, Tail, Elem, NewTail).
+    my_nth0(Next, Tail, Elem, NewTail).
 
 put_piece(Board, X-Y, Piece, NewBoard) :-
-    nth0(Y, Board, OldRow, RestRows),
-    nth0(X, OldRow, _, OldRowRest),
-    nth0(X, NewRow, Piece, OldRowRest),
-    nth0(Y, NewBoard, NewRow, RestRows).
+    my_nth0(Y, Board, OldRow, RestRows),
+    my_nth0(X, OldRow, _, OldRowRest),
+    my_nth0(X, NewRow, Piece, OldRowRest),
+    my_nth0(Y, NewBoard, NewRow, RestRows).
+
+% -----------------------------------------------
+% All Valid Moves List
+% -----------------------------------------------
+
+% Tenta mover para qualquer posição válida no tabuleiro
+try_move_in_directions(Board, SrcX-SrcY, DestX-DestY, Player) :-
+    % Itera sobre todas as possíveis coordenadas de destino
+    range(0, 7, DestX),
+    range(0, 7, DestY),
+    % Evita que a posição de destino seja a mesma que a origem
+    (DestX \= SrcX ; DestY \= SrcY),
+    % Verifica se o movimento é válido de Src para Dest
+    valid_move(Board, SrcX-SrcY, DestX-DestY, Player).
+
+
+% Cria uma lista de pares com coordenadas de origem e destino de todos os movimentos válidos
+valid_moves_list(Board, Player, MovePairs) :-
+    findall(SrcX-SrcY-DestX-DestY,
+        (
+            range(0, 7, SrcX),
+            range(0, 7, SrcY),
+            get_piece(Board, SrcX, SrcY, Piece),
+            piece(Player, Piece),
+            try_move_in_directions(Board, SrcX-SrcY, DestX-DestY, Player)
+        ),
+        AllMoves
+    ),
+    sort(AllMoves, MovePairs).
+
 
 % -----------------------------------------------
 % Valid Moves
@@ -229,6 +251,12 @@ get_number(Min, Max, Prompt, X-Y) :-
 
 % Choose a piece
 choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
+    % Mostrar todas as jogadas possíveis
+    write('Calculating all valid moves...'), nl,
+    valid_moves_list(Board, Player, Moves),
+    write('Valid Moves: '), nl,
+    print_valid_moves(Moves),
+
     length(Board, Size),
     Max is Size - 1,
     repeat,
@@ -254,6 +282,11 @@ confirm(SrcX-SrcY, DestX-DestY) :-
     ; Choice = 0 -> fail
     ).
 
+
+print_valid_moves([]).
+print_valid_moves([SrcX-SrcY-DestX-DestY | Rest]) :-
+    format('From (~w, ~w) to (~w, ~w)~n', [SrcX, SrcY, DestX, DestY]),
+    print_valid_moves(Rest).
 % -----------------------------------------------
 % Game Over
 % -----------------------------------------------
