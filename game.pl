@@ -17,6 +17,8 @@
 % -----------------------------------------------
 % Board
 % -----------------------------------------------
+
+% Actual board, where the game is played
 board(1, [
     [w, w, empty, empty, empty, empty, empty, empty],
     [w, w, empty, empty, empty, empty, empty, empty],
@@ -28,18 +30,17 @@ board(1, [
     [empty, empty, b, b, b, b, b, b]
 ]).
 
-% Test board
-board(2, [
-    [empty, empty, empty, empty, empty, empty, empty, w],
-    [empty, empty, empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty, empty, empty],
-    [b, empty, empty, empty, empty, empty, empty, empty]
+% Initial board (Immutable board, template to reset the board)
+initial_board([
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [w, w, empty, empty, empty, empty, empty, empty],
+    [empty, empty, b, b, b, b, b, b],
+    [empty, empty, b, b, b, b, b, b]
 ]).
-
 
 
 % -----------------------------------------------
@@ -463,7 +464,15 @@ play_bot_vs_bot :-
 % Rules and Menu
 % -----------------------------------------------
 
+% Reset the board to the initial state
+reset_board :-
+    retractall(board(_, _)),
+    initial_board(InitialBoard),
+    assertz(board(1, InitialBoard)).
+
+% Start the game
 play :-
+    reset_board,
     menu.
 
 menu :-
