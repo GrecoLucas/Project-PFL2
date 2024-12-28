@@ -171,8 +171,7 @@ put_piece(Board, X-Y, Piece, NewBoard) :-
 
 move(Board, SrcX-SrcY, DestX-DestY, Player) :-
     repeat,
-    choose_src(Board, SrcX-SrcY, Player),
-    choose_dest(Board, SrcX-SrcY, DestX-DestY, Player),
+    choose_move(Board, SrcX-SrcY, DestX-DestY, Player),
     ( confirm(SrcX-SrcY, DestX-DestY) ->
         true
     ; write('Move cancelled. Starting over.'), nl, fail
@@ -187,7 +186,7 @@ get_number(Min, Max, Prompt, X-Y) :-
     Y >= Min, Y =< Max.
 
 % Choose a piece
-choose_src(Board, SrcX-SrcY, Player) :-
+choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
     length(Board, Size),
     Max is Size - 1,
     repeat,
@@ -196,13 +195,6 @@ choose_src(Board, SrcX-SrcY, Player) :-
         true
     ; write('Invalid piece. Please select your own piece.'), nl, fail
     ),
-    !.
-
-% Choose a move
-choose_dest(Board, SrcX-SrcY, DestX-DestY, Player) :-
-    length(Board, Size),
-    Max is Size - 1,
-    repeat,
     get_number(0, Max, 'Destination X-Y (e.g. 0-0)', DestX-DestY),
     ( valid_move(Board, SrcX-SrcY, DestX-DestY, Player) ->
         true
