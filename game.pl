@@ -5,6 +5,15 @@
 :- use_module(library(lists)).
 :- use_module(library(random)).
 
+
+% -----------------------------------------------
+% Dynamic Predicates
+% -----------------------------------------------
+
+% board/2 is dynamic because the board can change during the game (Bots, Players, etc.)
+:- dynamic board/2.
+
+
 % -----------------------------------------------
 % Board
 % -----------------------------------------------
@@ -142,7 +151,12 @@ display_player(player2) :-
 % -----------------------------------------------
 % Weak Bot Moves
 % -----------------------------------------------
-% Encontra todos os movimentos válidos para o jogador atual
+
+random_list_move_member(List, Element) :-
+    length(List, Length),
+    Length > 0,
+    random(0, Length, Index),
+    nth0(Index, List, Element).
 
 range(Min, Max, Min) :- Min =< Max.
 range(Min, Max, Value) :-
@@ -150,16 +164,29 @@ range(Min, Max, Value) :-
     Next is Min + 1,
     range(Next, Max, Value).
 
-choose_move_with_bot(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer, _) :-
-    find_piece_and_move(Board, CurrentPlayer, SrcX-SrcY, DestX-DestY).
+% Escolhe uma peça aleatória e realiza um movimento aleatório entre os possíveis
+choose_move_with_bot(Board, SrcX-SrcY, DestX-DestY, Player, _) :-
+    valid_moves_list(Board, Player, MovePairs),
+    MovePairs \= [],  % Assegura que há movimentos disponíveis
+    % Extrai todas as posições de origem únicas
+    findall(SrcX-SrcY, member(SrcX-SrcY-_-_, MovePairs), SrcListDup),
+    sort(SrcListDup, SrcList),  % Remove duplicatas
+    % Seleciona uma posição de origem aleatória
+    random_member(SrcX-SrcY, SrcList),
+    % Encontra todos os movimentos possíveis para a posição de origem selecionada
+    findall(DestX-DestY, member(SrcX-SrcY-DestX-DestY, MovePairs), DestList),
+    % Seleciona uma posição de destino aleatória
+    random_member(DestX-DestY, DestList),
+    % Realiza o movimento no tabuleiro
+    piece(Player, Piece),
+    put_piece(Board, SrcX-SrcY, empty, TempBoard),
+    put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
+    % Atualiza o tabuleiro após o movimento
+    retractall(board(_, _)),
+    assert(board(1, NewBoard)),  % Supondo que o tabuleiro atual seja referenciado por board(1, ...)
+    % Exibe o movimento realizado pelo bot
+    format('Bot move: (~w, ~w) -> (~w, ~w)~n', [SrcX, SrcY, DestX, DestY]).
 
-% Encontra a primeira peça do jogador que pode ser movida e realiza o movimento
-find_piece_and_move(Board, Player, SrcX-SrcY, DestX-DestY) :-
-    range(0, 7, SrcX),
-    range(0, 7, SrcY),
-    get_piece(Board, SrcX, SrcY, Piece),
-    piece(Player, Piece), % Verifica se a peça pertence ao jogador
-    try_move_in_directions(Board, SrcX-SrcY, DestX-DestY, Player).
 
 % -----------------------------------------------
 % Get Piece - Reading the Board
@@ -284,8 +311,10 @@ confirm(SrcX-SrcY, DestX-DestY) :-
 
 
 print_valid_moves([]).
-print_valid_moves([SrcX-SrcY-DestX-DestY | Rest]) :-
-    format('From (~w, ~w) to (~w, ~w)~n', [SrcX, SrcY, DestX, DestY]),
+print_valid_moves([SrcX-SrcY-DestX-DestY]) :-
+    format('From (~w, ~w) to (~w, ~w)~n', [SrcX, SrcY, DestX, DestY]).
+print_valid_moves([SrcX-SrcY-DestX-DestY, SrcX2-SrcY2-DestX2-DestY2 | Rest]) :-
+    format('From (~w, ~w) to (~w, ~w)    From (~w, ~w) to (~w, ~w)~n', [SrcX, SrcY, DestX, DestY, SrcX2, SrcY2, DestX2, DestY2]),
     print_valid_moves(Rest).
 % -----------------------------------------------
 % Game Over
