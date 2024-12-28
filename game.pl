@@ -320,7 +320,7 @@ game_loop_against_bot((Board, CurrentPlayer), Difficulty) :-
         ;
         % Caso contrário, é a vez do jogador humano
         (
-            choose_move(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer) ->
+            move(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer) ->
                 piece(CurrentPlayer, Piece),
                 put_piece(Board, SrcX-SrcY, empty, TempBoard),
                 put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
@@ -367,7 +367,7 @@ choose_game_mode :-
 % Plays
 % -----------------------------------------------
 play :-
-    board(2, Board),
+    board(1, Board),
     game_loop((Board, player1)).
 
 
