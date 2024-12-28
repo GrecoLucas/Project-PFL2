@@ -17,14 +17,14 @@ board(1, [
 
 % Test board
 board(2, [
-    [w, w, empty, empty, empty, empty, empty, empty],
-    [b, empty, empty, empty, empty, empty, empty, empty],
+    [empty, empty, empty, empty, empty, empty, empty, w],
     [empty, empty, empty, empty, empty, empty, empty, empty],
     [empty, empty, empty, empty, empty, empty, empty, empty],
     [empty, empty, empty, empty, empty, empty, empty, empty],
     [empty, empty, empty, empty, empty, empty, empty, empty],
     [empty, empty, empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty, empty, empty]
+    [empty, empty, empty, empty, empty, empty, empty, empty],
+    [b, empty, empty, empty, empty, empty, empty, empty]
 ]).
 
 
@@ -169,6 +169,15 @@ put_piece(Board, X-Y, Piece, NewBoard) :-
 % Valid Moves
 % -----------------------------------------------
 
+move(Board, SrcX-SrcY, DestX-DestY, Player) :-
+    repeat,
+    choose_src(Board, SrcX-SrcY, Player),
+    choose_dest(Board, SrcX-SrcY, DestX-DestY, Player),
+    ( confirm(SrcX-SrcY, DestX-DestY) ->
+        true
+    ; write('Move cancelled. Starting over.'), nl, fail
+    ).
+
 % Prompt the user for a coordinate in the range 0..7
 get_number(Min, Max, Prompt, X-Y) :-
     repeat,
@@ -177,8 +186,8 @@ get_number(Min, Max, Prompt, X-Y) :-
     X >= Min, X =< Max,
     Y >= Min, Y =< Max.
 
-% Choose a move
-choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
+% Choose a piece
+choose_src(Board, SrcX-SrcY, Player) :-
     length(Board, Size),
     Max is Size - 1,
     repeat,
@@ -187,6 +196,13 @@ choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
         true
     ; write('Invalid piece. Please select your own piece.'), nl, fail
     ),
+    !.
+
+% Choose a move
+choose_dest(Board, SrcX-SrcY, DestX-DestY, Player) :-
+    length(Board, Size),
+    Max is Size - 1,
+    repeat,
     get_number(0, Max, 'Destination X-Y (e.g. 0-0)', DestX-DestY),
     ( valid_move(Board, SrcX-SrcY, DestX-DestY, Player) ->
         true
@@ -194,14 +210,26 @@ choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
     ),
     !.
 
+% Confirm the move
+confirm(SrcX-SrcY, DestX-DestY) :-
+    write('Move from '), write(SrcX), write('-'), write(SrcY),
+    write(' to '), write(DestX), write('-'), write(DestY), nl,
+    write('Confirm? 1 - Yes; 0 - No'), nl,
+    read(Choice),
+    ( Choice = 1 -> true
+    ; Choice = 0 -> fail
+    ).
+
 % -----------------------------------------------
 % Game Loop and Game Over
 % -----------------------------------------------
 game_over(Board) :-
     \+ (member(Row, Board), member(w, Row)), % Sem peças brancas
+    display_board(Board),
     write('Black wins!'), nl, !.
 game_over(Board) :-
     \+ (member(Row, Board), member(b, Row)), % Sem peças pretas
+    display_board(Board),
     write('White wins!'), nl, !.
 
 game_loop((Board, CurrentPlayer)) :-
@@ -209,7 +237,7 @@ game_loop((Board, CurrentPlayer)) :-
 game_loop((Board, CurrentPlayer)) :-
     display_board(Board),
     display_player(CurrentPlayer),
-    choose_move(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer),
+    move(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer),
     piece(CurrentPlayer, Piece),
     put_piece(Board, SrcX-SrcY, empty, TempBoard),
     put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
@@ -221,7 +249,7 @@ game_loop((Board, CurrentPlayer)) :-
 % -----------------------------------------------
 
 play :-
-    board(1, Board),
+    board(2, Board),
     game_loop((Board, player1)).
 
 menu :-
