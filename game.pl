@@ -194,10 +194,32 @@ get_piece(Board, X, Y, Piece) :-
     nthX(Board, Y, Row),
     nthX(Row, X, Piece).
 
+% Check if a piece has any available moves
+has_available_moves(Board, X-Y, player1) :-
+    member(Direction, [
+        0-(-1), 1-(-1), 1-0, 1-1, % Non-capturing moves for White
+        0-1, -1-1, -1-0, -1-(-1)  % Capturing moves for White
+    ]),
+    Direction = DX-DY,
+    DestX is X + DX,
+    DestY is Y + DY,
+    (valid_move(Board, X-Y, DestX-DestY, player1) -> true ; fail).
+
+has_available_moves(Board, X-Y, player2) :-
+    member(Direction, [
+        0-(-1), 1-(-1), -1-(-1), 1-0, % Non-capturing moves for Black
+        0-1, -1-0, -1-1, 1-1           % Capturing moves for Black
+    ]),
+    Direction = DX-DY,
+    DestX is X + DX,
+    DestY is Y + DY,
+    (valid_move(Board, X-Y, DestX-DestY, player2) -> true ; fail).
+
 % Check if the piece belongs to the current player
-its_my_piece(Board, X-Y, Player) :-
+valid_piece(Board, X-Y, Player) :-
     get_piece(Board, X, Y, Piece),
-    piece(Player, Piece).
+    piece(Player, Piece),
+    has_available_moves(Board, X-Y, Player).
 
 % -----------------------------------------------
 % Put Piece - Updating the Board
@@ -242,7 +264,7 @@ choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
     Max is Size - 1,
     repeat,
     get_number(0, Max, 'Source X-Y (e.g. 0-0)', SrcX-SrcY),
-    ( its_my_piece(Board, SrcX-SrcY, Player) ->
+    ( valid_piece(Board, SrcX-SrcY, Player) ->
         true
     ; write('Invalid piece. Please select your own piece.'), nl, fail
     ),
