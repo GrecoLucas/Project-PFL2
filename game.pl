@@ -1,9 +1,4 @@
 % -----------------------------------------------
-%
-
-
-
-% -----------------------------------------------
 % Board
 % -----------------------------------------------
 board(1, [
@@ -374,7 +369,7 @@ choose_game_mode :-
 % -----------------------------------------------
 % Plays
 % -----------------------------------------------
-play :-
+play_player_vs_player :-
     board(1, Board),
     game_loop((Board, player1)).
 
@@ -405,6 +400,9 @@ play_bot_vs_bot :-
 % -----------------------------------------------
 % Rules and Menu
 % -----------------------------------------------
+
+play :-
+    menu.
 
 menu :-
     write('Welcome to Storm Clouds!'), nl,
@@ -439,7 +437,7 @@ menu_choice(_) :-
     write('Invalid choice!'), nl,
     menu.
 
-game_mode(1) :- play.
+game_mode(1) :- play_player_vs_player.
 game_mode(2) :- play_agaist_bot.
 game_mode(3) :- play_bot_vs_bot.
 game_mode(_) :- write('Invalid choice!'), nl, choose_game_mode.
