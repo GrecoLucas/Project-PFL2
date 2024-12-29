@@ -428,8 +428,8 @@ range(Min, Max, Value) :-
     Next is Min + 1,
     range(Next, Max, Value).
 
-% Escolhe uma peça aleatória e realiza um movimento aleatório entre os possíveis
-choose_move_with_bot(Board, SrcX-SrcY, DestX-DestY, Player, Difficulty, NewBoard) :-
+% Escolhe uma peça aleatória e realiza um movimento aleatório entre os possíveis (Easy)
+choose_move_with_bot(Board, SrcX-SrcY, DestX-DestY, Player, 1, NewBoard) :- % Difficulty 1 is Easy
     valid_moves_list(Board, Player, MovePairs),
     MovePairs \= [],  % Assegura que há movimentos disponíveis
     % Extrai todas as posições de origem únicas
@@ -446,6 +446,27 @@ choose_move_with_bot(Board, SrcX-SrcY, DestX-DestY, Player, Difficulty, NewBoard
     put_piece(Board, SrcX-SrcY, empty, TempBoard),
     put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
     % Exibe o movimento realizado pelo bot
+    format('Bot move: (~w, ~w) -> (~w, ~w)~n', [SrcX, SrcY, DestX, DestY]).
+
+
+choose_move_with_bot(Board, SrcX-SrcY, DestX-DestY, Player, 2, NewBoard) :- % Difficulty 2 is Hard
+    valid_moves_list(Board, Player, MovePairs),
+    MovePairs \= [],  % Ensure there are available moves
+    % Separate capturing and non-capturing moves
+    (Player = player1 -> OpponentPiece = b ; OpponentPiece = w),
+    findall(SrcX-SrcY-DestX-DestY, (member(SrcX-SrcY-DestX-DestY, MovePairs), get_piece(Board, DestX, DestY, OpponentPiece)), CapturingMoves),
+    findall(SrcX-SrcY-DestX-DestY, (member(SrcX-SrcY-DestX-DestY, MovePairs), get_piece(Board, DestX, DestY, empty)), NonCapturingMoves),
+    % Prioritize capturing moves
+    (CapturingMoves \= [] ->
+        random_member(SrcX-SrcY-DestX-DestY, CapturingMoves)
+    ;
+        random_member(SrcX-SrcY-DestX-DestY, NonCapturingMoves)
+    ),
+    % Perform the move on the board
+    piece(Player, Piece),
+    put_piece(Board, SrcX-SrcY, empty, TempBoard),
+    put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
+    % Display the move made by the bot
     format('Bot move: (~w, ~w) -> (~w, ~w)~n', [SrcX, SrcY, DestX, DestY]).
 
 % -----------------------------------------------
@@ -640,8 +661,4 @@ game_mode(2) :- play_agaist_bot.
 game_mode(3) :- play_bot_vs_bot.
 game_mode(_) :- write('Invalid choice!'), nl, choose_game_mode.
 
-
-% -----------------------------------------------
-% Bots Difficulty
-% -----------------------------------------------
-
+:- initialization(play).
