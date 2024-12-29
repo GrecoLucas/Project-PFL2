@@ -365,35 +365,26 @@ move(Board, SrcX-SrcY, DestX-DestY, Player) :-
     ; write('Move cancelled. Starting over.'), nl, fail
     ).
 
-% Prompt the user for a coordinate in the range 0..7
-get_number(Min, Max, Prompt, X-Y) :-
+% Prompt the user for a move number
+get_move_number(Moves, Move) :-
+    length(Moves, Length),
+    MaxIndex is Length - 1,
     repeat,
-    write(Prompt), nl,
-    read(X-Y),
-    X >= Min, X =< Max,
-    Y >= Min, Y =< Max.
+    write('Choose a move number (0-'), write(MaxIndex), write('): '), nl,
+    read(Index),
+    Index >= 0, Index =< MaxIndex,
+    nth0(Index, Moves, Move).
 
-% Choose a piece
+% Choose a piece and move
 choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
     % Mostrar todas as jogadas possíveis
     write('Calculating all valid moves...'), nl,
     valid_moves_list(Board, Player, Moves),
     write('Valid Moves: '), nl,
-    print_valid_moves(Moves),
+    print_valid_moves(Moves, 0),
 
-    length(Board, Size),
-    Max is Size - 1,
-    repeat,
-    get_number(0, Max, 'Source X-Y (e.g. 0-0)', SrcX-SrcY),
-    ( valid_piece(Board, SrcX-SrcY, Player) ->
-        true
-    ; write('Invalid piece. Please select your own piece.'), nl, fail
-    ),
-    get_number(0, Max, 'Destination X-Y (e.g. 0-0)', DestX-DestY),
-    ( valid_move(Board, SrcX-SrcY, DestX-DestY, Player) ->
-        true
-    ; write('Invalid move. Please try again.'), nl, fail
-    ),
+    % Get the move number from the user
+    get_move_number(Moves, SrcX-SrcY-DestX-DestY),
     !.
 
 % Confirm the move
@@ -406,12 +397,14 @@ confirm(SrcX-SrcY, DestX-DestY) :-
     ; Choice = 0 -> fail
     ).
 
-print_valid_moves([]).
-print_valid_moves([SrcX-SrcY-DestX-DestY]) :-
-    format('From (~w, ~w) to (~w, ~w)~n', [SrcX, SrcY, DestX, DestY]).
-print_valid_moves([SrcX-SrcY-DestX-DestY, SrcX2-SrcY2-DestX2-DestY2 | Rest]) :-
-    format('From (~w, ~w) to (~w, ~w)    From (~w, ~w) to (~w, ~w)~n', [SrcX, SrcY, DestX, DestY, SrcX2, SrcY2, DestX2, DestY2]),
-    print_valid_moves(Rest).
+print_valid_moves(Moves) :-
+    print_valid_moves(Moves, 0).
+
+print_valid_moves([], _).
+print_valid_moves([SrcX-SrcY-DestX-DestY | Rest], Index) :-
+    format('~w: From (~w, ~w) to (~w, ~w)~n', [Index, SrcX, SrcY, DestX, DestY]),
+    NextIndex is Index + 1,
+    print_valid_moves(Rest, NextIndex).
 
 % -----------------------------------------------
 % Weak Bot Moves
