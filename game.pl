@@ -222,11 +222,12 @@ valid_move(Board, X-Y, Nx-Ny, player2) :-
     get_piece(Board, X, Y, b),
     (
       (Nx = X, Ny > Y) , Direction = 1      % Down
-    ; (Nx < X, Ny = Y) , Direction = 2        % Left
-    ; (Nx < X, Ny > Y) , Direction = 3       % Diagonal down-left
+    ; (Nx < X, Ny > Y) , Direction = 2        % Left
+    ; (Nx < X, Ny = Y) , Direction = 3       % Diagonal down-left
     ; (Nx > X, Ny > Y) , Direction = 4        % Diagonal down-right
     ),
-    free_path_black(Board, X-Y, Nx-Ny, Direction), get_piece(Board, Nx, Ny, w), !.
+    free_path_black(Board, X-Y, Nx-Ny, Direction),
+    get_piece(Board, Nx, Ny, w), !.
 
 
 % -----------------------------------------------
@@ -637,7 +638,7 @@ rules :-
     write('- The game is played on an 8x8 board.'), nl,
     write('- Each player begins with 12 pieces.'), nl,
     write('- Non-capturing moves (only move 1 tile):'), nl,
-    write('  * Black moves up, diagonal-up-right, diagonal_up-left, right.'), nl,
+    write('  * Black moves up, diagonal-up-right, diagonal-up-left, right.'), nl,
     write('  * White moves up, diagonal-up-right, right, diagonal-down-right.'), nl,
     write('- Capturing moves (can move through multiple tiles):'), nl,
     write('  * Black moves down, left, diagonal-down-left, diagonal-down-right.'), nl,
