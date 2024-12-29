@@ -236,9 +236,10 @@ valid_move(Board, X-Y, Nx-Ny, player2) :-
 
 % Display the entire board with column/row labels
 display_board(Board) :-
+    nl,
     write('     0   1   2   3   4   5   6   7'), nl,
     write('   +---+---+---+---+---+---+---+---+'), nl,
-    display_rows(Board, 0).
+    display_rows(Board, 0), nl.
 
 % Recursively print each row with index
 display_rows([], _).
@@ -363,7 +364,7 @@ move(Board, SrcX-SrcY, DestX-DestY, Player) :-
     choose_move(Board, SrcX-SrcY, DestX-DestY, Player),
     ( confirm(SrcX-SrcY, DestX-DestY) ->
         true
-    ; write('Move cancelled. Starting over.'), nl, fail
+    ; nl, write('Move cancelled. Starting over.'), nl, fail
     ).
 
 % Prompt the user for a move number
@@ -371,7 +372,7 @@ get_move_number(Moves, Move) :-
     length(Moves, Length),
     MaxIndex is Length - 1,
     repeat,
-    write('Choose a move number (0-'), write(MaxIndex), write('): '), nl,
+    nl,write('Choose a move number (0-'), write(MaxIndex), write('): '), nl,
     read(Index),
     Index >= 0, Index =< MaxIndex,
     nth0(Index, Moves, Move).
@@ -379,7 +380,7 @@ get_move_number(Moves, Move) :-
 % Choose a piece and move
 choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
     % Mostrar todas as jogadas possíveis
-    write('Calculating all valid moves...'), nl,
+    nl,write('Calculating all valid moves...'), nl, nl,
     valid_moves_list(Board, Player, Moves),
     write('Valid Moves: '), nl,
     print_valid_moves(Moves, 0),
@@ -390,8 +391,8 @@ choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
 
 % Confirm the move
 confirm(SrcX-SrcY, DestX-DestY) :-
-    write('Move from '), write(SrcX), write('-'), write(SrcY),
-    write(' to '), write(DestX), write('-'), write(DestY), nl,
+    nl,write('Move from '), write(SrcX), write('-'), write(SrcY),
+    write(' to '), write(DestX), write('-'), write(DestY), nl, nl,
     write('Confirm? 1 - Yes; 0 - No'), nl,
     read(Choice),
     ( Choice = 1 -> true
@@ -569,7 +570,7 @@ game_loop_bot_against_bot((Board, CurrentPlayer), Difficulty1, Difficulty2) :-
 % -----------------------------------------------
 
 choose_game_mode :-
-    write('Choose game mode:'), nl,
+    nl, write('Choose game mode:'), nl,
     write('1. Player vs Player'), nl,
     write('2. Player vs Bot'), nl,
     write('3. Bot vs Bot'), nl,
@@ -587,9 +588,9 @@ play_player_vs_player :-
 play_agaist_bot :-
     write('Choose difficulty:'), nl,
     write('1. Easy'), nl,
-    write('2. Hard'), nl,
+    write('2. Hard'), nl, nl,
     read(Difficulty),
-    write('Bot difficulty: '), write(Difficulty), nl,
+    write('Bot difficulty: '), write(Difficulty), nl, nl,
     initial_board(InitialBoard),
     game_loop_against_bot((InitialBoard, player1), Difficulty).
 
@@ -597,11 +598,11 @@ play_bot_vs_bot :-
     write('Bot vs Bot'), nl,
     write('Choose difficulty for bot 1:'), nl,
     write('1. Easy'), nl,
-    write('2. Hard'), nl,
+    write('2. Hard'), nl, nl,
     read(Difficulty1),
     write('Choose difficulty for bot 2:'), nl,
     write('1. Easy'), nl,
-    write('2. Hard'), nl,
+    write('2. Hard'), nl, nl,
     read(Difficulty2),
     initial_board(InitialBoard),
     game_loop_bot_against_bot((InitialBoard, player1), Difficulty1, Difficulty2).
@@ -620,7 +621,10 @@ play :-
     menu.
 
 menu :-
-    write('Welcome to Storm Clouds!'), nl,
+    nl,
+    write('--------------------------'), nl,
+    write(' Welcome to Storm Clouds!'), nl,
+    write('--------------------------'), nl,
     write('1. Play'), nl,
     write('2. Rules'), nl,
     write('3. Exit'), nl,
