@@ -49,7 +49,7 @@ initial_board([
 
 symbol(w, 'W').
 symbol(b, 'B').
-symbol(empty, '.').
+symbol(empty, ' ').
 
 
 % -----------------------------------------------
@@ -236,15 +236,16 @@ valid_move(Board, X-Y, Nx-Ny, player2) :-
 
 % Display the entire board with column/row labels
 display_board(Board) :-
-    write('    0 1 2 3 4 5 6 7'), nl,
+    write('     0   1   2   3   4   5   6   7'), nl,
+    write('   +---+---+---+---+---+---+---+---+'), nl,
     display_rows(Board, 0).
 
 % Recursively print each row with index
 display_rows([], _).
 display_rows([Row|Remaining], RowIndex) :-
-    write(' '), write(RowIndex), write('  '),
-    display_row(Row),
-    nl,
+    write(' '), write(RowIndex), write(' |'),
+    display_row(Row),nl,
+    write('   +---+---+---+---+---+---+---+---+'),nl,
     NextRow is RowIndex + 1,
     display_rows(Remaining, NextRow).
 
@@ -252,7 +253,7 @@ display_rows([Row|Remaining], RowIndex) :-
 display_row([]).
 display_row([Cell|Cells]) :-
     symbol(Cell, S),
-    write(S), write(' '),
+    write(' '), write(S), write(' |'),
     display_row(Cells).
 
 % -----------------------------------------------
