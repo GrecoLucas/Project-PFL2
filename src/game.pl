@@ -9,17 +9,20 @@
 :- consult('bots.pl').
 
 % -----------------------------------------------
-% Display Board
+% Mostrar o tabuleiro
 % -----------------------------------------------
 
-% Display the entire board with column/row labels
+% Mostrar o tabuleiro
+% Board = Tabuleiro a ser exibido
 display_board(Board) :-
     nl,
     write('     0   1   2   3   4   5   6   7'), nl,
     write('   +---+---+---+---+---+---+---+---+'), nl,
     display_rows(Board, 0), nl.
 
-% Recursively print each row with index
+% Mostrar as linhas do tabuleiro
+% Rows = Linhas a serem exibidas
+% RowIndex = Índice da linha atual
 display_rows([], _).
 display_rows([Row|Remaining], RowIndex) :-
     write(' '), write(RowIndex), write(' |'),
@@ -28,7 +31,8 @@ display_rows([Row|Remaining], RowIndex) :-
     NextRow is RowIndex + 1,
     display_rows(Remaining, NextRow).
 
-% Display a single row
+% Mostrar as células de uma linha
+% Cells = Células a serem exibidas
 display_row([]).
 display_row([Cell|Cells]) :-
     symbol(Cell, S),
@@ -36,7 +40,7 @@ display_row([Cell|Cells]) :-
     display_row(Cells).
 
 % -----------------------------------------------
-% Display Current Player
+% Mostrar o jogador atual
 % -----------------------------------------------
 
 display_player(player1) :-
@@ -46,59 +50,82 @@ display_player(player2) :-
     write('Current Player: Black'), nl.
 
 % -----------------------------------------------
-% Get Piece - Reading the Board
+% ler peça
 % -----------------------------------------------
 
-% Get n-th element from a list (0-based index)
+% ler peça
+% N = Índice da peça
+
 nthX([Head|_], 0, Head) :- !.
 nthX([_|Tail], N, Value) :-
     N > 0,
     N1 is N - 1,
     nthX(Tail, N1, Value).
 
-% Check if the piece is valid
+% Verifica se a peça é válida
+% Board = Tabuleiro atual
+% X-Y = Coordenadas da peça
+% Piece = Peça a ser verificada
 get_piece(Board, X, Y, Piece) :-
     nthX(Board, Y, Row),
     nthX(Row, X, Piece).
 
-% Check if a piece has any available moves
+% Verifica se uma peça tem movimentos disponíveis
+% Board = Tabuleiro atual
+% X-Y = Coordenadas da peça
+% Player = Jogador atual
 has_available_moves(Board, X-Y, player1) :-
     member(Direction, [
-        0-(-1), 1-(-1), 1-0, 1-1, % Non-capturing moves for White
-        0-1, -1-1, -1-0, -1-(-1)  % Capturing moves for White
+        0-(-1), 1-(-1), 1-0, 1-1, % Movimentos não capturantes para Branco
+        0-1, -1-1, -1-0, -1-(-1)  % Movimentos capturantes para Branco
     ]),
     Direction = DX-DY,
     DestX is X + DX,
     DestY is Y + DY,
     valid_move(Board, X-Y, DestX-DestY, player1).
 
+% Verifica se uma peça tem movimentos disponíveis
+% Board = Tabuleiro atual
+% X-Y = Coordenadas da peça
+% Player = Jogador atual
 has_available_moves(Board, X-Y, player2) :-
     member(Direction, [
-        0-(-1), 1-(-1), -1-(-1), 1-0, % Non-capturing moves for Black
-        0-1, -1-0, -1-1, 1-1           % Capturing moves for Black
+        0-(-1), 1-(-1), -1-(-1), 1-0, % Movimentos não capturantes para Preto
+        0-1, -1-0, -1-1, 1-1           % Movimentos capturantes para Preto
     ]),
     Direction = DX-DY,
     DestX is X + DX,
     DestY is Y + DY,
     valid_move(Board, X-Y, DestX-DestY, player2).
 
-% Check if the piece belongs to the current player
+% Verifica se a peça pertence ao jogador atual
+% Player = Jogador atual
+% Piece = Peça a ser verificada
 valid_piece(Board, X-Y, Player) :-
     get_piece(Board, X, Y, Piece),
     piece(Player, Piece),
     has_available_moves(Board, X-Y, Player).
 
 % -----------------------------------------------
-% Put Piece - Updating the Board
+% Alterar peça 
 % -----------------------------------------------
 
-% Base case
+% Altera a peça em uma posição específica
+% Index = Índice da peça
+% [Elem|Rest] = Lista de peças
+% Elem = Peça a ser alterada
+% Rest = Lista de peças restantes
 my_nth0(0, [Elem|Rest], Elem, Rest).
 my_nth0(Index, [Head|Tail], Elem, [Head|NewTail]) :-
     Index > 0,
     Next is Index - 1,
     my_nth0(Next, Tail, Elem, NewTail).
 
+% Colocar peça em uma posição específica
+% Board = Tabuleiro atual
+% X-Y = Coordenadas da peça
+% Piece = Peça a ser colocada
+% NewBoard = Novo tabuleiro após a peça ser colocada
 put_piece(Board, X-Y, Piece, NewBoard) :-
     my_nth0(Y, Board, OldRow, RestRows),
     my_nth0(X, OldRow, _, OldRowRest),
@@ -109,17 +136,31 @@ put_piece(Board, X-Y, Piece, NewBoard) :-
 % All Valid Moves List
 % -----------------------------------------------
 
-% Tenta mover para qualquer posição válida no tabuleiro
+% Intera sobre o intervalo de valores do tamanho do tabuleiro (0 a 7)
+% Min = Valor mínimo do intervalo
+% Max = Valor máximo do intervalo
+% Value = Valor gerado dentro do intervalo
+range(Min, Max, Min) :- Min =< Max. 
+range(Min, Max, Value) :-
+    Min < Max,  
+    Next is Min + 1, 
+    range(Next, Max, Value).  
+
+% Tenta mover para qualquer posição válida no tabuleiro, combinação 0-7 para X e Y
+% Board = Estado atual do tabuleiro
+% SrcX-SrcY = Coordenadas de origem da peça
+% DestX-DestY = Coordenadas de destino da peça
+% Player = Jogador atual
 try_move_in_directions(Board, SrcX-SrcY, DestX-DestY, Player) :-
-    % Itera sobre todas as possíveis coordenadas de destino
     range(0, 7, DestX),
     range(0, 7, DestY),
-    % Evita que a posição de destino seja a mesma que a origem
     (DestX \= SrcX ; DestY \= SrcY),
-    % Verifica se o movimento é válido de Src para Dest
     valid_move(Board, SrcX-SrcY, DestX-DestY, Player).
 
 % Cria uma lista de pares com coordenadas de origem e destino de todos os movimentos válidos
+% Board = Estado atual do tabuleiro
+% Player = Jogador atual
+% MovePairs = Lista de movimentos válidos para o jogador atual
 valid_moves_list(Board, Player, MovePairs) :-
     findall(SrcX-SrcY-DestX-DestY,
         (
@@ -134,9 +175,14 @@ valid_moves_list(Board, Player, MovePairs) :-
     sort(AllMoves, MovePairs).
 
 % -----------------------------------------------
-% Valid Moves
+% Movimento válido
 % -----------------------------------------------
 
+% Verifica se um movimento é válido
+% Board = Tabuleiro atual
+% SrcX-SrcY = Coordenadas de origem
+% DestX-DestY = Coordenadas de destino
+% Player = Jogador atual
 move(Board, SrcX-SrcY, DestX-DestY, Player) :-
     repeat,
     choose_move(Board, SrcX-SrcY, DestX-DestY, Player),
@@ -145,7 +191,9 @@ move(Board, SrcX-SrcY, DestX-DestY, Player) :-
     ; nl, write('Move cancelled. Starting over.'), nl, fail
     ).
 
-% Prompt the user for a move number
+% Obter o número do movimento do usuário
+% Moves = Lista de movimentos válidos
+% Move = Movimento escolhido pelo usuário
 get_move_number(Moves, Move) :-
     length(Moves, Length),
     MaxIndex is Length - 1,
@@ -155,19 +203,22 @@ get_move_number(Moves, Move) :-
     Index >= 0, Index =< MaxIndex,
     nth0(Index, Moves, Move).
 
-% Choose a piece and move
+% Escolher um movimento
+% Board = Tabuleiro atual
+% SrcX-SrcY = Coordenadas de origem
+% DestX-DestY = Coordenadas de destino
+% Player = Jogador atual
 choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
-    % Mostrar todas as jogadas possíveis
     nl,write('Calculating all valid moves...'), nl, nl,
     valid_moves_list(Board, Player, Moves),
     write('Valid Moves: '), nl,
     print_valid_moves(Moves, 0),
-
-    % Get the move number from the user
     get_move_number(Moves, SrcX-SrcY-DestX-DestY),
     !.
 
-% Confirm the move
+% Confirmar o movimento
+% SrcX-SrcY = Coordenadas de origem
+% DestX-DestY = Coordenadas de destino
 confirm(SrcX-SrcY, DestX-DestY) :-
     nl,write('Move from '), write(SrcX), write('-'), write(SrcY),
     write(' to '), write(DestX), write('-'), write(DestY), nl, nl,
@@ -180,6 +231,9 @@ confirm(SrcX-SrcY, DestX-DestY) :-
 print_valid_moves(Moves) :-
     print_valid_moves(Moves, 0).
 
+% Imprime os movimentos válidos
+% Moves = Lista de movimentos válidos
+% Index = Índice do movimento atual
 print_valid_moves([], _).
 print_valid_moves([SrcX-SrcY-DestX-DestY | Rest], Index) :-
     format('~w: From (~w, ~w) to (~w, ~w)~n', [Index, SrcX, SrcY, DestX, DestY]),
@@ -191,6 +245,8 @@ print_valid_moves([SrcX-SrcY-DestX-DestY | Rest], Index) :-
 % Game Over
 % -----------------------------------------------
 
+% Verifica se o jogo acabou
+% Board = Tabuleiro atual
 game_over(Board) :-
     \+ (member(Row, Board), member(w, Row)), % Sem peças brancas
     display_board(Board),
@@ -200,27 +256,37 @@ game_over(Board) :-
     display_board(Board),
     write('White wins!'), nl, !.
 
+
+% -----------------------------------------------
+% Funções principais
 % -----------------------------------------------
 % PvP Game loop
 % -----------------------------------------------
 
+% Loop do jogo Player vs Player
+% Board = Tabuleiro atual
+% CurrentPlayer = Jogador atual
 game_loop((Board, CurrentPlayer)) :-
     game_over(Board), !.
 game_loop((Board, CurrentPlayer)) :-
-    display_board(Board),
-    display_player(CurrentPlayer),
-    move(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer),
-    piece(CurrentPlayer, Piece),
-    put_piece(Board, SrcX-SrcY, empty, TempBoard),
-    put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
-    change_player(CurrentPlayer, NextPlayer),
-    game_loop((NewBoard, NextPlayer)).
+    display_board(Board),                                   % Mostra o tabuleiro
+    display_player(CurrentPlayer),                          % Mostra o jogador atual              
+    move(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer),     % Realiza um movimento
+    piece(CurrentPlayer, Piece),                            % Obtém a peça do jogador atual                 
+    put_piece(Board, SrcX-SrcY, empty, TempBoard),          % Remove a peça da posição de origem
+    put_piece(TempBoard, DestX-DestY, Piece, NewBoard),     % Coloca a peça na posição de destino
+    change_player(CurrentPlayer, NextPlayer),               % Troca o jogador
+    game_loop((NewBoard, NextPlayer)).                      % Continua o loop do jogo
 
 
 % -----------------------------------------------
 % PvBot Game loop
 % -----------------------------------------------
 
+% Loop do jogo Player vs Bot
+% Board = Tabuleiro atual
+% CurrentPlayer = Jogador atual
+% Difficulty = Dificuldade do bot
 game_loop_against_bot((Board, player2), _) :- 
     game_over(Board), !.
 game_loop_against_bot((Board, CurrentPlayer), Difficulty) :-
@@ -261,19 +327,23 @@ game_loop_against_bot((Board, CurrentPlayer), Difficulty) :-
 % Bot vs Bot Game Loop
 % -----------------------------------------------
 
+% Loop do jogo Bot vs Bot
+% Board = Tabuleiro atual
+% CurrentPlayer = Jogador atual
+% Difficulty1 = Dificuldade do bot 1
+% Difficulty2 = Dificuldade do bot 2
 game_loop_bot_against_bot((Board, CurrentPlayer), Difficulty1, Difficulty2) :-
     game_over(Board), !.
 game_loop_bot_against_bot((Board, CurrentPlayer), Difficulty1, Difficulty2) :-
     display_board(Board),
     display_player(CurrentPlayer),
-    % Determine the bot's difficulty based on the current player
+    % Determina a dificuldade do bot com base no jogador atual
     (CurrentPlayer = player1 -> 
         Difficulty = Difficulty1
     ; 
         CurrentPlayer = player2 -> 
         Difficulty = Difficulty2
     ),
-    % Bot chooses a move
     ( choose_move_with_bot(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer, Difficulty, NewBoard) -> 
         piece(CurrentPlayer, Piece),
         put_piece(Board, SrcX-SrcY, empty, TempBoard),
@@ -281,16 +351,17 @@ game_loop_bot_against_bot((Board, CurrentPlayer), Difficulty1, Difficulty2) :-
         change_player(CurrentPlayer, NextPlayer),
         game_loop_bot_against_bot((NewBoard, NextPlayer), Difficulty1, Difficulty2)
     ;
-        % No valid move for current bot
         write('Bot '), write(CurrentPlayer), write(' has no valid moves!'), nl,
         change_player(CurrentPlayer, NextPlayer),
         game_loop_bot_against_bot((Board, NextPlayer), Difficulty1, Difficulty2)
     ).
 
 % -----------------------------------------------
-% Choose Game Mode
+% Menus
 % -----------------------------------------------
 
+% Escolher o modo de jogo
+% GameMode = Modo de jogo escolhido
 choose_game_mode :-
     nl, write('Choose game mode:'), nl,
     write('1. Player vs Player'), nl,
@@ -300,13 +371,15 @@ choose_game_mode :-
     game_mode(GameMode).
 
 % -----------------------------------------------
-% Plays
+% Escolhas do menu
 % -----------------------------------------------
 
+% Iniciar o jogo modo Player vs Player
 play_player_vs_player :-
     initial_board(InitialBoard),
     game_loop((InitialBoard, player1)).
 
+% Iniciar o jogo modo Player vs Bot
 play_agaist_bot :-
     write('Choose difficulty:'), nl,
     write('1. Easy'), nl,
@@ -316,6 +389,7 @@ play_agaist_bot :-
     initial_board(InitialBoard),
     game_loop_against_bot((InitialBoard, player1), Difficulty).
 
+% Iniciar o jogo modo Bot vs Bot
 play_bot_vs_bot :-
     write('Bot vs Bot'), nl,
     write('Choose difficulty for bot 1:'), nl,
@@ -330,18 +404,19 @@ play_bot_vs_bot :-
     game_loop_bot_against_bot((InitialBoard, player1), Difficulty1, Difficulty2).
 
 % -----------------------------------------------
-% Rules and Menu
+% Main
 % -----------------------------------------------
 
-% Reset the board to the initial state
+% Reiniciar o tabuleiro
 reset_board(InitialBoard) :-
     initial_board(InitialBoard).
 
-% Start the game
+% Começo do jogo (Função principal)
 play :-
     reset_board(InitialBoard),
     menu.
 
+% --------------------------------
 menu :-
     nl,
     write('--------------------------'), nl,
@@ -367,7 +442,7 @@ rules :-
     write('- If a player cannot move any piece, they must pass.'), nl.
 
 % -----------------------------------------------
-% Chooses
+% Escolhas do menu
 % -----------------------------------------------
 
 menu_choice(1) :- choose_game_mode.

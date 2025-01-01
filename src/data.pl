@@ -10,7 +10,7 @@
 % Board
 % -----------------------------------------------
 
-% Actual board, where the game is played
+% Tabuleiro jogável, onde w = white, b = black, empty = vazio, e o jogo acontece
 board(1, [
     [w, w, empty, empty, empty, empty, empty, empty],
     [w, w, empty, empty, empty, empty, empty, empty],
@@ -22,7 +22,7 @@ board(1, [
     [empty, empty, b, b, b, b, b, b]
 ]).
 
-% Initial board (Immutable board, template to reset the board)
+% Tabuleiro inicial, onde é usado para reiniciar o jogo
 initial_board([
     [w, w, empty, empty, empty, empty, empty, empty],
     [w, w, empty, empty, empty, empty, empty, empty],
@@ -39,6 +39,7 @@ initial_board([
 % Board Symbols
 % -----------------------------------------------
 
+% Converte peças para símbolos
 symbol(w, 'W').
 symbol(b, 'B').
 symbol(empty, ' ').
@@ -48,13 +49,17 @@ symbol(empty, ' ').
 % Players
 % -----------------------------------------------
 
-player(1, player1). % White
-player(2, player2). % Black
+% Jogadores
+player(1, player1). % Branco
+player(2, player2). % Preto
 
+% Peça de cada jogador
 piece(player1, w).
 piece(player2, b).
 
+% -----------------------------------------------
+% Troca de Jogador
+% -----------------------------------------------
+
 change_player(player1, player2).
 change_player(player2, player1).
-
-
