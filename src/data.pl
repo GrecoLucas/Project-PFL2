@@ -57,4 +57,3 @@ piece(player2, b).
 change_player(player1, player2).
 change_player(player2, player1).
 
-

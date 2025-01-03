@@ -139,12 +139,14 @@ valid_moves_list(Board, Player, MovePairs) :-
 % -----------------------------------------------
 
 move(Board, SrcX-SrcY, DestX-DestY, Player) :-
-    repeat,
     choose_move(Board, SrcX-SrcY, DestX-DestY, Player),
-    ( confirm(SrcX-SrcY, DestX-DestY) ->
+    ( SrcX = -1 -> 
+        true    % Pass turn if no moves
+    ; confirm(SrcX-SrcY, DestX-DestY) ->
         true
     ; nl, write('Move cancelled. Starting over.'), nl, fail
     ).
+
 
 % Prompt the user for a move number
 get_move_number(Moves, Move) :-
@@ -158,15 +160,17 @@ get_move_number(Moves, Move) :-
 
 % Choose a piece and move
 choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
-    % Mostrar todas as jogadas possíveis
-    nl,write('Calculating all valid moves...'), nl, nl,
+    nl, write('Calculating all valid moves...'), nl, nl,
     valid_moves_list(Board, Player, Moves),
-    write('Valid Moves: '), nl,
-    print_valid_moves(Moves, 0),
-
-    % Get the move number from the user
-    get_move_number(Moves, SrcX-SrcY-DestX-DestY),
-    !.
+    ( Moves = [] ->
+        write('No valid moves. Passing the turn.'), nl,
+        SrcX = -1, SrcY = -1, DestX = -1, DestY = -1
+    ;
+        write('Valid Moves: '), nl,
+        print_valid_moves(Moves, 0),
+        get_move_number(Moves, SrcX-SrcY-DestX-DestY),
+        !
+    ).
 
 % Confirm the move
 confirm(SrcX-SrcY, DestX-DestY) :-
@@ -174,8 +178,8 @@ confirm(SrcX-SrcY, DestX-DestY) :-
     SrcY1 is 8-SrcY,
     DestX1 is DestX + 1,
     DestY1 is 8-DestY,
-    nl,write('Move from '), write(SrcX1), write('-'), write(SrcY1),
-    write(' to '), write(DestX1), write('-'), write(DestY1), nl, nl,
+    nl,write('Move: ('), write(SrcX1), write('-'), write(SrcY1),
+    write(') -> ('), write(DestX1), write('-'), write(DestY1), write(')'), nl, nl,
     write('Confirm? 1 - Yes; 0 - No'), nl,
     read(Choice),
     ( Choice = 1 -> true
@@ -209,6 +213,27 @@ game_over(Board) :-
     display_board(Board),
     write('White wins!'), nl, !.
 
+
+game_over_bot(Board, _) :-
+    \+ (member(Row, Board), member(w, Row)), % No white pieces
+    display_board(Board),
+    write('Bot wins!'), nl, !.
+game_over_bot(Board, _) :-
+    \+ (member(Row, Board), member(b, Row)), % No black pieces
+    display_board(Board),
+    write('White wins!'), nl, !.
+
+game_over_bot_x_bot(Board, _, Difficulty1, Difficulty2) :-
+    \+ (member(Row, Board), member(w, Row)), % No white pieces
+    display_board(Board),
+    write('Bot '), write(Difficulty2), write(' (Black) wins!'), nl, !.
+
+game_over_bot_x_bot(Board, _, Difficulty1, Difficulty2) :-
+    \+ (member(Row, Board), member(b, Row)), % No black pieces
+    display_board(Board),
+    write('Bot '), write(Difficulty1), write(' (White) wins!'), nl, !.
+
+
 % -----------------------------------------------
 % PvP Game loop
 % -----------------------------------------------
@@ -219,19 +244,25 @@ game_loop((Board, CurrentPlayer)) :-
     display_board(Board),
     display_player(CurrentPlayer),
     move(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer),
-    piece(CurrentPlayer, Piece),
-    put_piece(Board, SrcX-SrcY, empty, TempBoard),
-    put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
-    change_player(CurrentPlayer, NextPlayer),
-    game_loop((NewBoard, NextPlayer)).
-
+    ( SrcX = -1 ->
+        % Pass turn if no moves
+        change_player(CurrentPlayer, NextPlayer),
+        game_loop((Board, NextPlayer))
+    ;
+        % Make move and continue
+        piece(CurrentPlayer, Piece),
+        put_piece(Board, SrcX-SrcY, empty, TempBoard),
+        put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
+        change_player(CurrentPlayer, NextPlayer),
+        game_loop((NewBoard, NextPlayer))
+    ).
 
 % -----------------------------------------------
 % PvBot Game loop
 % -----------------------------------------------
 
-game_loop_against_bot((Board, player2), _) :- 
-    game_over(Board), !.
+game_loop_against_bot((Board, CurrentPlayer), _) :- 
+    game_over_bot(Board, CurrentPlayer), !.
 game_loop_against_bot((Board, CurrentPlayer), Difficulty) :-
     display_board(Board),
     display_player(CurrentPlayer),
@@ -271,7 +302,7 @@ game_loop_against_bot((Board, CurrentPlayer), Difficulty) :-
 % -----------------------------------------------
 
 game_loop_bot_against_bot((Board, CurrentPlayer), Difficulty1, Difficulty2) :-
-    game_over(Board), !.
+    game_over_bot_x_bot(Board, CurrentPlayer, Difficulty1, Difficulty2 ), !.
 game_loop_bot_against_bot((Board, CurrentPlayer), Difficulty1, Difficulty2) :-
     display_board(Board),
     display_player(CurrentPlayer),
