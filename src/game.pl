@@ -15,14 +15,15 @@
 % Display the entire board with column/row labels
 display_board(Board) :-
     nl,
-    write('     0   1   2   3   4   5   6   7'), nl,
     write('   +---+---+---+---+---+---+---+---+'), nl,
-    display_rows(Board, 0), nl.
+    display_rows(Board, 0),
+    write('     1   2   3   4   5   6   7   8'), nl, nl.
 
 % Recursively print each row with index
 display_rows([], _).
 display_rows([Row|Remaining], RowIndex) :-
-    write(' '), write(RowIndex), write(' |'),
+    N is 8-RowIndex,
+    write(' '), write(N), write(' |'),
     display_row(Row),nl,
     write('   +---+---+---+---+---+---+---+---+'),nl,
     NextRow is RowIndex + 1,
@@ -169,8 +170,12 @@ choose_move(Board, SrcX-SrcY, DestX-DestY, Player) :-
 
 % Confirm the move
 confirm(SrcX-SrcY, DestX-DestY) :-
-    nl,write('Move from '), write(SrcX), write('-'), write(SrcY),
-    write(' to '), write(DestX), write('-'), write(DestY), nl, nl,
+    SrcX1 is SrcX + 1,
+    SrcY1 is 8-SrcY,
+    DestX1 is DestX + 1,
+    DestY1 is 8-DestY,
+    nl,write('Move from '), write(SrcX1), write('-'), write(SrcY1),
+    write(' to '), write(DestX1), write('-'), write(DestY1), nl, nl,
     write('Confirm? 1 - Yes; 0 - No'), nl,
     read(Choice),
     ( Choice = 1 -> true
@@ -182,7 +187,11 @@ print_valid_moves(Moves) :-
 
 print_valid_moves([], _).
 print_valid_moves([SrcX-SrcY-DestX-DestY | Rest], Index) :-
-    format('~w: From (~w, ~w) to (~w, ~w)~n', [Index, SrcX, SrcY, DestX, DestY]),
+    SrcX1 is SrcX + 1,
+    SrcY1 is 8-SrcY,
+    DestX1 is DestX + 1,
+    DestY1 is 8-DestY,
+    format('~w: From (~w, ~w) to (~w, ~w)~n', [Index, SrcX1, SrcY1, DestX1, DestY1]),
     NextIndex is Index + 1,
     print_valid_moves(Rest, NextIndex).
 
