@@ -1,12 +1,14 @@
+% -----------------------------------------------
+% In this file, the movements are defined. At the end (2), there are the 8 possible movements for each player, totaling 16.
+% At the beginning (1) of the file, the functions that check if the path is clear for capturing movements are defined.
+% -----------------------------------------------
 
 % -----------------------------------------------
-% Functions to check if the path is free
+% (1) Functions to check if the path is free
 % -----------------------------------------------
-
 within_board(X, Y) :- 
     X >= 0, X =< 7,
     Y >= 0, Y =< 7.
-
 
 % Black Down Movement
 free_path_black_dest_reached(Board, X-Y, X-DestY, 1) :-
@@ -181,9 +183,10 @@ free_path_white(Board, X-Y, DestX-DestY, 4) :-
 free_path_white(Board, X-Y, DestX-DestY, 4) :-
     free_path_white_continue(Board, X-Y, DestX-DestY, 4).
 % -----------------------------------------------
-% Movement Rules
+% Movement Rules for each player (White and Black)
 % -----------------------------------------------
 
+% White non-capturing moves
 valid_move(Board, X-Y, Nx-Ny, player1) :-  % Up
     get_piece(Board, X, Y, w),
     Nx is X,
@@ -236,6 +239,9 @@ valid_move(Board, X-Y, Nx-Ny, player1) :-  % Diagonal up-left
     Ny < Y,
     free_path_white(Board, X-Y, Nx-Ny, 4),
     get_piece(Board, Nx, Ny, b), !.
+
+
+% -----------------------------------------------
 
 % Black non-capturing moves
 valid_move(Board, X-Y, Nx-Ny, player2) :-  % Up
