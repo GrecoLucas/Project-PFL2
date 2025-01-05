@@ -110,17 +110,14 @@ put_piece(Board, X-Y, Piece, NewBoard) :-
 % All Valid Moves List
 % -----------------------------------------------
 
-% Tenta mover para qualquer posição válida no tabuleiro
+% Try to move in all directions
 try_move_in_directions(Board, SrcX-SrcY, DestX-DestY, Player) :-
-    % Itera sobre todas as possíveis coordenadas de destino
     range(0, 7, DestX),
     range(0, 7, DestY),
-    % Evita que a posição de destino seja a mesma que a origem
     (DestX \= SrcX ; DestY \= SrcY),
-    % Verifica se o movimento é válido de Src para Dest
     valid_move(Board, SrcX-SrcY, DestX-DestY, Player).
 
-% Cria uma lista de pares com coordenadas de origem e destino de todos os movimentos válidos
+% Create a list of all valid moves
 valid_moves_list(Board, Player, MovePairs) :-
     findall(SrcX-SrcY-DestX-DestY,
         (
@@ -147,7 +144,6 @@ move(Board, SrcX-SrcY, DestX-DestY, Player) :-
     ; nl, write('Move cancelled. Starting over.'), nl,
       move(Board, _, _, Player)
     ).
-
 
 % Prompt the user for a move number
 get_move_number(Moves, Move) :-
@@ -217,7 +213,6 @@ game_over(Board) :-
     \+ (member(Row, Board), member(b, Row)), % Sem peças pretas
     display_board(Board),
     write('White wins!'), nl, !.
-
 
 game_over_bot(Board, _) :-
     \+ (member(Row, Board), member(w, Row)), % No white pieces
@@ -388,7 +383,7 @@ play_bot_vs_bot :-
     game_loop_bot_against_bot((InitialBoard, player1), Difficulty1, Difficulty2).
 
 % -----------------------------------------------
-% Rules and Menu
+% Main function and menu
 % -----------------------------------------------
 
 % Reset the board to the initial state
