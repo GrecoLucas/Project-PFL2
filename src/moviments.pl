@@ -8,156 +8,285 @@ within_board(X, Y) :-
     Y >= 0, Y =< 7.
 
 
-% free_path_black for Direction 1 (Down)
+% Black Down Movement
+free_path_black_dest_reached(Board, X-Y, X-DestY, 1) :-
+    Y < DestY,
+    NextY is Y + 1,
+    within_board(X, NextY),
+    NextY = DestY.
+
+free_path_black_continue(Board, X-Y, X-DestY, 1) :-
+    Y < DestY,
+    NextY is Y + 1,
+    within_board(X, NextY),
+    get_piece(Board, X, NextY, empty),
+    free_path_black(Board, X-NextY, X-DestY, 1).
+
 free_path_black(Board, X-Y, X-DestY, 1) :-
-    Y < DestY,
-    NextY is Y + 1,
-    within_board(X, NextY),
-    (
-        NextY = DestY
-    ->  true  % Destination reached; do not require it to be empty
-    ;   get_piece(Board, X, NextY, empty),
-        free_path_black(Board, X-NextY, X-DestY, 1)
-    ).
+    free_path_black_dest_reached(Board, X-Y, X-DestY, 1).
+free_path_black(Board, X-Y, X-DestY, 1) :-
+    free_path_black_continue(Board, X-Y, X-DestY, 1).
 
-% free_path_black for Direction 2 (Diagonal Down-Left)
+% Black Diagonal Down-Left
+free_path_black_dest_reached(Board, X-Y, DestX-DestY, 2) :-
+    X > DestX,
+    Y < DestY,
+    NextX is X - 1,
+    NextY is Y + 1,
+    within_board(NextX, NextY),
+    NextX = DestX,
+    NextY = DestY.
+
+free_path_black_continue(Board, X-Y, DestX-DestY, 2) :-
+    X > DestX,
+    Y < DestY,
+    NextX is X - 1,
+    NextY is Y + 1,
+    within_board(NextX, NextY),
+    get_piece(Board, NextX, NextY, empty),
+    free_path_black(Board, NextX-NextY, DestX-DestY, 2).
+
 free_path_black(Board, X-Y, DestX-DestY, 2) :-
-    X > DestX,
-    Y < DestY,
-    NextX is X - 1,
-    NextY is Y + 1,
-    within_board(NextX, NextY),
-    (
-        (NextX = DestX, NextY = DestY)
-    ->  true  % Destination reached; do not require it to be empty
-    ;   get_piece(Board, NextX, NextY, empty),
-        free_path_black(Board, NextX-NextY, DestX-DestY, 2)
-    ).
+    free_path_black_dest_reached(Board, X-Y, DestX-DestY, 2).
+free_path_black(Board, X-Y, DestX-DestY, 2) :-
+    free_path_black_continue(Board, X-Y, DestX-DestY, 2).
 
-% free_path_black for Direction 3 (Left)
-free_path_black(Board, X-Y, DestX-Y, 3) :-
+% Black Left
+free_path_black_dest_reached(Board, X-Y, DestX-Y, 3) :-
     X > DestX,
     NextX is X - 1,
     within_board(NextX, Y),
-    (
-        NextX = DestX
-    ->  true  % Destination reached; do not require it to be empty
-    ;   get_piece(Board, NextX, Y, empty),
-        free_path_black(Board, NextX-Y, DestX-Y, 3)
-    ).
+    NextX = DestX.
 
-% free_path_black for Direction 4 (Diagonal Up-Left)
-free_path_black(Board, X-Y, DestX-DestY, 4) :-
+free_path_black_continue(Board, X-Y, DestX-Y, 3) :-
+    X > DestX,
+    NextX is X - 1,
+    within_board(NextX, Y),
+    get_piece(Board, NextX, Y, empty),
+    free_path_black(Board, NextX-Y, DestX-Y, 3).
+
+free_path_black(Board, X-Y, DestX-Y, 3) :-
+    free_path_black_dest_reached(Board, X-Y, DestX-Y, 3).
+free_path_black(Board, X-Y, DestX-Y, 3) :-
+    free_path_black_continue(Board, X-Y, DestX-Y, 3).
+
+% Black Diagonal Up-Left  
+free_path_black_dest_reached(Board, X-Y, DestX-DestY, 4) :-
     X > DestX,
     Y > DestY,
     NextX is X - 1,
     NextY is Y - 1,
     within_board(NextX, NextY),
-    (
-        (NextX = DestX, NextY = DestY)
-    ->  true  % Destination reached; do not require it to be empty
-    ;   get_piece(Board, NextX, NextY, empty),
-        free_path_black(Board, NextX-NextY, DestX-DestY, 4)
-    ).
+    NextX = DestX,
+    NextY = DestY.
 
-% free_path_white for Direction 1 (Down)
-free_path_white(Board, X-Y, X-DestY, 1) :-
+free_path_black_continue(Board, X-Y, DestX-DestY, 4) :-
+    X > DestX,
+    Y > DestY,
+    NextX is X - 1,
+    NextY is Y - 1,
+    within_board(NextX, NextY),
+    get_piece(Board, NextX, NextY, empty),
+    free_path_black(Board, NextX-NextY, DestX-DestY, 4).
+
+free_path_black(Board, X-Y, DestX-DestY, 4) :-
+    free_path_black_dest_reached(Board, X-Y, DestX-DestY, 4).
+free_path_black(Board, X-Y, DestX-DestY, 4) :-
+    free_path_black_continue(Board, X-Y, DestX-DestY, 4).
+
+% White movements follow same pattern
+% White Down
+free_path_white_dest_reached(Board, X-Y, X-DestY, 1) :-
     Y < DestY,
     NextY is Y + 1,
     within_board(X, NextY),
-    (
-        NextY = DestY
-    ->  true  % Destination reached; do not require it to be empty
-    ;   get_piece(Board, X, NextY, empty),
-        free_path_white(Board, X-NextY, X-DestY, 1)
-    ).
+    NextY = DestY.
 
-% free_path_white for Direction 2 (Diagonal Down-Left)
-free_path_white(Board, X-Y, DestX-DestY, 2) :-
+free_path_white_continue(Board, X-Y, X-DestY, 1) :-
+    Y < DestY,
+    NextY is Y + 1,
+    within_board(X, NextY),
+    get_piece(Board, X, NextY, empty),
+    free_path_white(Board, X-NextY, X-DestY, 1).
+
+free_path_white(Board, X-Y, X-DestY, 1) :-
+    free_path_white_dest_reached(Board, X-Y, X-DestY, 1).
+free_path_white(Board, X-Y, X-DestY, 1) :-
+    free_path_white_continue(Board, X-Y, X-DestY, 1).
+
+% White Diagonal Down-Left
+free_path_white_dest_reached(Board, X-Y, DestX-DestY, 2) :-
     X > DestX,
     Y < DestY,
     NextX is X - 1,
     NextY is Y + 1,
     within_board(NextX, NextY),
-    (
-        (NextX = DestX, NextY = DestY)
-    ->  true  % Destination reached; do not require it to be empty
-    ;   get_piece(Board, NextX, NextY, empty),
-        free_path_white(Board, NextX-NextY, DestX-DestY, 2)
-    ).
+    NextX = DestX,
+    NextY = DestY.
 
-% free_path_white for Direction 3 (Left)
-free_path_white(Board, X-Y, DestX-Y, 3) :-
+free_path_white_continue(Board, X-Y, DestX-DestY, 2) :-
+    X > DestX,
+    Y < DestY,
+    NextX is X - 1,
+    NextY is Y + 1,
+    within_board(NextX, NextY),
+    get_piece(Board, NextX, NextY, empty),
+    free_path_white(Board, NextX-NextY, DestX-DestY, 2).
+
+free_path_white(Board, X-Y, DestX-DestY, 2) :-
+    free_path_white_dest_reached(Board, X-Y, DestX-DestY, 2).
+free_path_white(Board, X-Y, DestX-DestY, 2) :-
+    free_path_white_continue(Board, X-Y, DestX-DestY, 2).
+
+% White Left
+free_path_white_dest_reached(Board, X-Y, DestX-Y, 3) :-
     X > DestX,
     NextX is X - 1,
     within_board(NextX, Y),
-    (
-        NextX = DestX
-    ->  true  % Destination reached; do not require it to be empty
-    ;   get_piece(Board, NextX, Y, empty),
-        free_path_white(Board, NextX-Y, DestX-Y, 3)
-    ).
+    NextX = DestX.
 
-% free_path_white for Direction 4 (Diagonal Up-Left)
-free_path_white(Board, X-Y, DestX-DestY, 4) :-
+free_path_white_continue(Board, X-Y, DestX-Y, 3) :-
+    X > DestX,
+    NextX is X - 1,
+    within_board(NextX, Y),
+    get_piece(Board, NextX, Y, empty),
+    free_path_white(Board, NextX-Y, DestX-Y, 3).
+
+free_path_white(Board, X-Y, DestX-Y, 3) :-
+    free_path_white_dest_reached(Board, X-Y, DestX-Y, 3).
+free_path_white(Board, X-Y, DestX-Y, 3) :-
+    free_path_white_continue(Board, X-Y, DestX-Y, 3).
+
+% White Diagonal Up-Left
+free_path_white_dest_reached(Board, X-Y, DestX-DestY, 4) :-
     X > DestX,
     Y > DestY,
     NextX is X - 1,
     NextY is Y - 1,
     within_board(NextX, NextY),
-    (
-        (NextX = DestX, NextY = DestY)
-    ->  true  % Destination reached; do not require it to be empty
-    ;   get_piece(Board, NextX, NextY, empty),
-        free_path_white(Board, NextX-NextY, DestX-DestY, 4)
-    ).
+    NextX = DestX,
+    NextY = DestY.
 
+free_path_white_continue(Board, X-Y, DestX-DestY, 4) :-
+    X > DestX,
+    Y > DestY,
+    NextX is X - 1,
+    NextY is Y - 1,
+    within_board(NextX, NextY),
+    get_piece(Board, NextX, NextY, empty),
+    free_path_white(Board, NextX-NextY, DestX-DestY, 4).
+
+free_path_white(Board, X-Y, DestX-DestY, 4) :-
+    free_path_white_dest_reached(Board, X-Y, DestX-DestY, 4).
+free_path_white(Board, X-Y, DestX-DestY, 4) :-
+    free_path_white_continue(Board, X-Y, DestX-DestY, 4).
 % -----------------------------------------------
 % Movement Rules
 % -----------------------------------------------
 
-% For White player (player1)
-valid_move(Board, X-Y, Nx-Ny, player1) :- 
+valid_move(Board, X-Y, Nx-Ny, player1) :-  % Up
     get_piece(Board, X, Y, w),
-    (
-      % Non-capturing moves (1 tile)
-      (Nx is X, Ny is Y - 1)    % Up
-    ; (Nx is X + 1, Ny is Y - 1)  % Diagonal up-right
-    ; (Nx is X + 1, Ny is Y)      % Right
-    ; (Nx is X + 1, Ny is Y + 1)  % Diagonal down-right
-    ),
+    Nx is X,
+    Ny is Y - 1,
     get_piece(Board, Nx, Ny, empty), !.
 
-valid_move(Board, X-Y, Nx-Ny, player1) :- 
+valid_move(Board, X-Y, Nx-Ny, player1) :-  % Diagonal up-right
     get_piece(Board, X, Y, w),
-    (
-      (Nx = X, Ny > Y), Direction = 1        % Down
-    ; (Nx < X, Ny > Y), Direction = 2        % Diagonal down-left
-    ; (Nx < X, Ny = Y), Direction = 3        % Left
-    ; (Nx < X, Ny < Y), Direction = 4        % Diagonal up-left
-    ),
-    free_path_white(Board, X-Y, Nx-Ny, Direction),
+    Nx is X + 1,
+    Ny is Y - 1,
+    get_piece(Board, Nx, Ny, empty), !.
+
+valid_move(Board, X-Y, Nx-Ny, player1) :-  % Right
+    get_piece(Board, X, Y, w),
+    Nx is X + 1,
+    Ny is Y,
+    get_piece(Board, Nx, Ny, empty), !.
+
+valid_move(Board, X-Y, Nx-Ny, player1) :-  % Diagonal down-right
+    get_piece(Board, X, Y, w),
+    Nx is X + 1,
+    Ny is Y + 1,
+    get_piece(Board, Nx, Ny, empty), !.
+
+% White capturing moves
+valid_move(Board, X-Y, Nx-Ny, player1) :-  % Down
+    get_piece(Board, X, Y, w),
+    Nx = X,
+    Ny > Y,
+    free_path_white(Board, X-Y, Nx-Ny, 1),
     get_piece(Board, Nx, Ny, b), !.
 
-% For Black player (player2)
-valid_move(Board, X-Y, Nx-Ny, player2) :- 
+valid_move(Board, X-Y, Nx-Ny, player1) :-  % Diagonal down-left
+    get_piece(Board, X, Y, w),
+    Nx < X,
+    Ny > Y,
+    free_path_white(Board, X-Y, Nx-Ny, 2),
+    get_piece(Board, Nx, Ny, b), !.
+
+valid_move(Board, X-Y, Nx-Ny, player1) :-  % Left
+    get_piece(Board, X, Y, w),
+    Nx < X,
+    Ny = Y,
+    free_path_white(Board, X-Y, Nx-Ny, 3),
+    get_piece(Board, Nx, Ny, b), !.
+
+valid_move(Board, X-Y, Nx-Ny, player1) :-  % Diagonal up-left
+    get_piece(Board, X, Y, w),
+    Nx < X,
+    Ny < Y,
+    free_path_white(Board, X-Y, Nx-Ny, 4),
+    get_piece(Board, Nx, Ny, b), !.
+
+% Black non-capturing moves
+valid_move(Board, X-Y, Nx-Ny, player2) :-  % Up
     get_piece(Board, X, Y, b),
-    (
-        % Non-capturing moves (1 tile)
-        (Nx is X, Ny is Y - 1)    % Up
-    ;   (Nx is X + 1, Ny is Y - 1)  % Diagonal up-right
-    ;   (Nx is X - 1, Ny is Y - 1)  % Diagonal up-left
-    ;   (Nx is X + 1, Ny is Y)      % Right
-    ),
+    Nx is X,
+    Ny is Y - 1,
     get_piece(Board, Nx, Ny, empty), !.
 
-valid_move(Board, X-Y, Nx-Ny, player2) :- 
+valid_move(Board, X-Y, Nx-Ny, player2) :-  % Diagonal up-right
     get_piece(Board, X, Y, b),
-    (
-      (Nx = X, Ny > Y) , Direction = 1      % Down
-    ; (Nx < X, Ny > Y) , Direction = 2        % Left
-    ; (Nx < X, Ny = Y) , Direction = 3       % Diagonal down-left
-    ; (Nx > X, Ny > Y) , Direction = 4        % Diagonal down-right
-    ),
-    free_path_black(Board, X-Y, Nx-Ny, Direction),
+    Nx is X + 1,
+    Ny is Y - 1,
+    get_piece(Board, Nx, Ny, empty), !.
+
+valid_move(Board, X-Y, Nx-Ny, player2) :-  % Diagonal up-left
+    get_piece(Board, X, Y, b),
+    Nx is X - 1,
+    Ny is Y - 1,
+    get_piece(Board, Nx, Ny, empty), !.
+
+valid_move(Board, X-Y, Nx-Ny, player2) :-  % Right
+    get_piece(Board, X, Y, b),
+    Nx is X + 1,
+    Ny is Y,
+    get_piece(Board, Nx, Ny, empty), !.
+
+% Black capturing moves
+valid_move(Board, X-Y, Nx-Ny, player2) :-  % Down
+    get_piece(Board, X, Y, b),
+    Nx = X,
+    Ny > Y,
+    free_path_black(Board, X-Y, Nx-Ny, 1),
+    get_piece(Board, Nx, Ny, w), !.
+
+valid_move(Board, X-Y, Nx-Ny, player2) :-  % Left
+    get_piece(Board, X, Y, b),
+    Nx < X,
+    Ny > Y,
+    free_path_black(Board, X-Y, Nx-Ny, 2),
+    get_piece(Board, Nx, Ny, w), !.
+
+valid_move(Board, X-Y, Nx-Ny, player2) :-  % Diagonal down-left
+    get_piece(Board, X, Y, b),
+    Nx < X,
+    Ny = Y,
+    free_path_black(Board, X-Y, Nx-Ny, 3),
+    get_piece(Board, Nx, Ny, w), !.
+
+valid_move(Board, X-Y, Nx-Ny, player2) :-  % Diagonal down-right
+    get_piece(Board, X, Y, b),
+    Nx > X,
+    Ny > Y,
+    free_path_black(Board, X-Y, Nx-Ny, 4),
     get_piece(Board, Nx, Ny, w), !.
