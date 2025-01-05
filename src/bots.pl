@@ -15,11 +15,13 @@
 % Bot 3 (Greedy):
 % - Full position evaluation after each move:
 %   * Capturing pieces (+15 points)
-%   * Safe positions (+5 points)
-%   * Threatened pieces (-3 points)
-%   * Board control (+1 point per controlled square)
-% - Simulates opponent responses
-% - Always picks highest scoring move
+%   * Safe positions (+5 points) 
+%   * Threatened pieces (-10 points)
+%   * Corner control bonus (+10 points for top-right corner)
+%   * Position value (higher near top-right corner)
+% - Evaluates board position and piece safety
+% - Always picks move with highest total score
+% - Prioritizes controlling top-right corner
 %
 % -----------------------------------------------
 
@@ -39,8 +41,16 @@ range(Min, Max, Value) :-
     Next is Min + 1,
     range(Next, Max, Value).
 
+
+% Sum elements of a list
+my_sum_list([], 0).
+my_sum_list([Head|Tail], Sum) :-
+    my_sum_list(Tail, TailSum),
+    Sum is Head + TailSum.
+
 % -----------------------------------------------
 % Bot 1 (Easy)
+
 % Board = Current board
 % SrcX-SrcY = Source position
 % DestX-DestY = Destination position
@@ -65,6 +75,8 @@ choose_move_with_bot(Board, SrcX-SrcY, DestX-DestY, Player, 1, NewBoard) :-
 
 % -----------------------------------------------
 % Bot 2 (Hard)
+
+% Filter non-capturing moves
 hard_bot_not_capturing_moves([], []).
 hard_bot_not_capturing_moves([SrcX-SrcY-DestX-DestY|Rest], [SrcX-SrcY-DestX-DestY|Filtered]) :-
     ( (DestX =:= SrcX + 1, DestY =:= SrcY - 1)
@@ -103,19 +115,37 @@ choose_move_with_bot(Board, SrcX-SrcY, DestX-DestY, Player, 2, NewBoard) :-
 
 % -----------------------------------------------
 % Bot 3 (Greedy)
-% Algoritmo greedy, analisa as jogadas
-% Evaluate position control and safety
+% Greedy bot that evaluates all possible moves and picks the best one
+
+% Calculate value of a board position based on distance to top-right corner
+position_value(X, Y, Value) :-
+    DistanceX is 7 - X,  % Distance from right edge
+    Value is (10 - DistanceX) + (8 - Y).  % Higher value closer to top-right
+
+% Evaluate a board position based on piece count, safety and position
 evaluate_position(Board, Player, Score) :-
     count_pieces(Board, Player, PieceCount),
     count_threatened_pieces(Board, Player, ThreatenedCount),
     count_safe_pieces(Board, Player, SafeCount),
-    Score is PieceCount*10 + SafeCount*5 - ThreatenedCount*3.
+    sum_position_values(Board, Player, PositionBonus),
+    Score is PieceCount*10 + SafeCount*5 - ThreatenedCount*3 + PositionBonus.
 
 % Count pieces for a player
 count_pieces(Board, Player, Count) :-
     piece(Player, Piece),
     findall(1, (member(Row, Board), member(Piece, Row)), Pieces),
     length(Pieces, Count).
+
+% Sum position values for all pieces
+sum_position_values(Board, Player, Sum) :-
+    piece(Player, Piece),
+    findall(Value, (
+        range(0, 7, X),
+        range(0, 7, Y),
+        get_piece(Board, X, Y, Piece),
+        position_value(X, Y, Value)
+    ), Values),
+    my_sum_list(Values, Sum).
 
 % Count pieces that can be captured
 count_threatened_pieces(Board, Player, Count) :-
@@ -145,7 +175,7 @@ can_be_captured(Board, X-Y, Player) :-
     valid_moves_list(Board, Opponent, OpponentMoves),
     member(_-_-X-Y, OpponentMoves).
 
-% Evaluate a move by simulating it
+% Evaluate a move based on position, capture, safety and corner control
 evaluate_move(Board, SrcX-SrcY-DestX-DestY, Player, Score) :-
     piece(Player, Piece),
     get_piece(Board, DestX, DestY, DestPiece),
@@ -154,7 +184,8 @@ evaluate_move(Board, SrcX-SrcY-DestX-DestY, Player, Score) :-
     evaluate_position(NewBoard, Player, PositionScore),
     (DestPiece = empty -> CaptureScore = 0 ; CaptureScore = 15),
     (can_be_captured(NewBoard, DestX-DestY, Player) -> SafetyPenalty = -10 ; SafetyPenalty = 0),
-    Score is PositionScore + CaptureScore + SafetyPenalty.
+    position_value(DestX, DestY, PosValue),
+    Score is PositionScore + CaptureScore + SafetyPenalty + PosValue*3.
 
 % Board = Current board
 % SrcX-SrcY = Source position
