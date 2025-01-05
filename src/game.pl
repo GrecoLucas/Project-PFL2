@@ -140,11 +140,12 @@ valid_moves_list(Board, Player, MovePairs) :-
 
 move(Board, SrcX-SrcY, DestX-DestY, Player) :-
     choose_move(Board, SrcX-SrcY, DestX-DestY, Player),
-    ( SrcX = -1 -> 
+    ( SrcX = -1 ->
         true    % Pass turn if no moves
     ; confirm(SrcX-SrcY, DestX-DestY) ->
         true
-    ; nl, write('Move cancelled. Starting over.'), nl, fail
+    ; nl, write('Move cancelled. Starting over.'), nl,
+      move(Board, _, _, Player)
     ).
 
 
@@ -178,12 +179,16 @@ confirm(SrcX-SrcY, DestX-DestY) :-
     SrcY1 is 8-SrcY,
     DestX1 is DestX + 1,
     DestY1 is 8-DestY,
-    nl,write('Move: ('), write(SrcX1), write('-'), write(SrcY1),
+    nl, write('Move: ('), write(SrcX1), write('-'), write(SrcY1),
     write(') -> ('), write(DestX1), write('-'), write(DestY1), write(')'), nl, nl,
     write('Confirm? 1 - Yes; 0 - No'), nl,
     read(Choice),
     ( Choice = 1 -> true
-    ; Choice = 0 -> fail
+    ; Choice = 0 ->
+         nl,
+        fail
+    ; nl, write('Invalid option. Try again.'), nl,
+      confirm(SrcX-SrcY, DestX-DestY)
     ).
 
 print_valid_moves(Moves) :-
