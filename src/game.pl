@@ -266,46 +266,6 @@ game_loop((Board, CurrentPlayer)) :-
 % PvBot Game loop
 % -----------------------------------------------
 
-game_loop_against_bot((Board, CurrentPlayer), _) :- 
-    game_over_bot(Board, CurrentPlayer), !.
-game_loop_against_bot((Board, CurrentPlayer), Difficulty) :-
-    display_board(Board),
-    display_player(CurrentPlayer),
-    (
-        % Verifica se o jogador atual é o bot
-        CurrentPlayer = player2 -> 
-        (
-            % Bot escolhe um movimento
-            choose_move_with_bot(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer, Difficulty, NewBoard) -> 
-                piece(CurrentPlayer, Piece),
-                put_piece(Board, SrcX-SrcY, empty, TempBoard),
-                put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
-                change_player(CurrentPlayer, NextPlayer),
-                game_loop_against_bot((NewBoard, NextPlayer), Difficulty)
-            ;
-                write('Bot has no valid moves!'), nl,
-                change_player(CurrentPlayer, NextPlayer),
-                game_loop_against_bot((Board, NextPlayer), Difficulty)
-        )
-        ;
-        % Caso contrário, é a vez do jogador humano
-        (
-            move(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer) -> 
-                piece(CurrentPlayer, Piece),
-                put_piece(Board, SrcX-SrcY, empty, TempBoard),
-                put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
-                change_player(CurrentPlayer, NextPlayer),
-                game_loop_against_bot((NewBoard, NextPlayer), Difficulty)
-            ;
-                write('Invalid move! Try again.'), nl,
-                game_loop_against_bot((Board, CurrentPlayer), Difficulty)
-        )
-    ).
-
-% -----------------------------------------------
-% Bot vs Bot Game Loop
-% -----------------------------------------------
-
 game_loop_against_bot((Board, CurrentPlayer), UserSide, _) :-
     game_over_bot(Board, CurrentPlayer), !.
 
@@ -340,6 +300,35 @@ game_loop_against_bot((Board, CurrentPlayer), UserSide, Difficulty) :-
         )
     ).
 
+% -----------------------------------------------
+% Bot vs Bot Game Loop
+% -----------------------------------------------
+
+game_loop_bot_against_bot((Board, CurrentPlayer), Difficulty1, Difficulty2) :-
+    game_over_bot_x_bot(Board, CurrentPlayer, Difficulty1, Difficulty2 ), !.
+game_loop_bot_against_bot((Board, CurrentPlayer), Difficulty1, Difficulty2) :-
+    display_board(Board),
+    display_player(CurrentPlayer),
+    % Determine the bot's difficulty based on the current player
+    (CurrentPlayer = player1 -> 
+        Difficulty = Difficulty1
+    ; 
+        CurrentPlayer = player2 -> 
+        Difficulty = Difficulty2
+    ),
+    % Bot chooses a move
+    ( choose_move_with_bot(Board, SrcX-SrcY, DestX-DestY, CurrentPlayer, Difficulty, NewBoard) -> 
+        piece(CurrentPlayer, Piece),
+        put_piece(Board, SrcX-SrcY, empty, TempBoard),
+        put_piece(TempBoard, DestX-DestY, Piece, NewBoard),
+        change_player(CurrentPlayer, NextPlayer),
+        game_loop_bot_against_bot((NewBoard, NextPlayer), Difficulty1, Difficulty2)
+    ;
+        % No valid move for current bot
+        write('Bot '), write(CurrentPlayer), write(' has no valid moves!'), nl,
+        change_player(CurrentPlayer, NextPlayer),
+        game_loop_bot_against_bot((Board, NextPlayer), Difficulty1, Difficulty2)
+    ).
 
 % -----------------------------------------------
 % Choose Game Mode
@@ -350,7 +339,6 @@ choose_game_mode :-
     write('1. Player vs Player'), nl,
     write('2. Player vs Bot'), nl,
     write('3. Bot vs Bot'), nl,
-    write('Every input must have a "." at the end'), nl,
     read(GameMode),
     game_mode(GameMode).
 
@@ -385,11 +373,11 @@ play_agaist_bot :-
 
 play_bot_vs_bot :-
     write('Bot vs Bot'), nl,
-    write('Choose difficulty for bot 1:'), nl,
+    write('Choose difficulty for bot 1 (White):'), nl,
     write('1. Easy'), nl,
     write('2. Hard'), nl, nl,
     read(Difficulty1),
-    write('Choose difficulty for bot 2:'), nl,
+    write('Choose difficulty for bot 2 (Black):'), nl,
     write('1. Easy'), nl,
     write('2. Hard'), nl, nl,
     read(Difficulty2),
@@ -417,6 +405,7 @@ menu :-
     write('1. Play'), nl,
     write('2. Rules'), nl,
     write('3. Exit'), nl,
+    write('Every input must have a "." at the end'), nl,
     read(Choice),
     menu_choice(Choice).
 
