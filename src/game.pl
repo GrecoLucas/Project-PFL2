@@ -351,8 +351,8 @@ play_against_bot_side_choice :-
     write('2. Black (player2)'), nl,
     read(Side),
     (
-        Side = 1 -> UserSide = player1
-    ;   Side = 2 -> UserSide = player2
+        (Side = 1, UserSide = player1)
+    ;   (Side = 2, UserSide = player2)
     ;   nl, write('Invalid choice, try again.'), nl, play_against_bot_side_choice, !
     ),
     nl, write('Choose difficulty:'), nl,
